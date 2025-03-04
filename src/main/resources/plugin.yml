@@ -1,0 +1,20 @@
+name: cDuello
+version: '1.0.0'
+main: dev.itscactus.cduello.Main
+api-version: '1.21'
+authors: [ItsCactus]
+description: A dueling plugin for Minecraft.
+website: https://github.com/ItsCactus
+softdepend: [Vault]
+commands:
+  duello:
+    description: Main command for dueling.
+    usage: /<command> [player/accept/deny/stats/bet]
+    aliases: [duel]
+permissions:
+  cduello.use:
+    description: Allows the player to use dueling functionality.
+    default: true
+  cduello.admin:
+    description: Allows the player to use administrative commands.
+    default: op 

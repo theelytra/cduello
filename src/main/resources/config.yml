@@ -1,0 +1,138 @@
+# cDuello Yapılandırma Dosyası
+
+# Mesajlar (MiniMessage formatı desteklenir)
+# Renk kodları için: https://docs.advntr.dev/minimessage/format.html
+messages:
+  prefix: "<dark_gray>[<aqua>cDuello<dark_gray>] <reset>"
+  duel-sent: "<yellow>Düello isteği <green>%player%<yellow> adlı oyuncuya gönderildi!"
+  duel-received: "<green>%player% <yellow>seni düelloya davet etti. <green>/duel accept <yellow>veya <red>/duel deny<yellow>."
+  duel-request-sent: "<yellow>Düello isteği <green>%player%<yellow> adlı oyuncuya gönderildi!"
+  duel-request-received: "<green>%player% <yellow>seni düelloya davet etti. <green>/duel accept <yellow>veya <red>/duel deny<yellow>."
+  duel-request-sent-money: "<yellow>Düello isteği <green>%player%<yellow> adlı oyuncuya <gold>%amount%<yellow> ödül için gönderildi!"
+  duel-request-received-money: "<green>%player% <yellow>seni <gold>%amount%<yellow> ödüllü düelloya davet etti. <green>/duel accept <yellow>veya <red>/duel deny<yellow>."
+  duel-request-timeout-sender: "<yellow>Düello isteğin <red>%player% <yellow>adlı oyuncuya süresi doldu!"
+  duel-request-timeout-target: "<yellow>Düello isteği <red>%player% <yellow>adlı oyuncudan süresi doldu!"
+  duel-request-denied-sender: "<red>%player% <yellow>düello isteğini reddetti!"
+  duel-request-denied-target: "<yellow>Düello isteğini reddettiniz."
+  duel-accepted: "<green>%player% <yellow>düello isteğini kabul etti!"
+  duel-denied: "<red>%player% <yellow>düello isteğini reddetti!"
+  duel-expired: "<yellow>Düello isteğin <red>%player% <yellow>adlı oyuncuya süresi doldu!"
+  no-pending-requests: "<red>Bekleyen düello isteğin yok!"
+  already-in-duel: "<red>Zaten bir düellondasın!"
+  target-in-duel: "<red>%player% zaten bir düelloda!"
+  duel-status-changed: "<red>Düello durumu değişti, istek artık geçerli değil."
+  sender-offline: "<red>Düello isteğini gönderen oyuncu artık çevrimiçi değil."
+  duel-countdown: "<yellow>Düello <red>%seconds% <yellow>saniye içinde başlıyor!"
+  duel-countdown-money: "<yellow>Düello <gold>%amount% <yellow>ödül için <red>%seconds% <yellow>saniye içinde başlıyor!"
+  duel-started: "<yellow>Düello başladı! İyi şanslar!"
+  duel-started-money: "<yellow>Düello <gold>%amount% <yellow>ödül için başladı! İyi şanslar!"
+  duel-won: "<green>Düelloyu kazandın!"
+  duel-lost: "<red>Düelloyu kaybettin!"
+  duel-won-money: "<green>Düelloyu kazandın ve <gold>%amount%<green> kazandın!"
+  duel-lost-money: "<red>Düelloyu kaybettin ve <gold>%amount%<red> kaybettin!"
+  player-not-found: "<red>Oyuncu bulunamadı!"
+  no-self-duel: "<red>Kendine düello isteği gönderemezsin!"
+  no-permission: "<red>Bu komutu kullanmak için yetkin yok!"
+  no-commands-in-duel: "<red>Düello sırasında bu komutu kullanamazsın!"
+  economy-not-enabled: "<red>Ekonomi sistemi bu sunucuda etkin değil!"
+  bet-too-low: "<red>Minimum bahis tutarı <gold>%amount%<red>!"
+  bet-too-high: "<red>Maksimum bahis tutarı <gold>%amount%<red>!"
+  insufficient-funds: "<red>Yeterli paran yok! <gold>%amount%<red> paraya ihtiyacın var."
+  target-insufficient-funds: "<red>%player% bu bahis için yeterli paraya sahip değil!"
+  sender-insufficient-funds: "<red>%player% artık bu bahis için yeterli paraya sahip değil!"
+  high-value-duel-announcement: "<blue>[Duyuru] <green>%player1% <yellow>ve <green>%player2% <yellow>arasında <gold>%amount% <yellow>ödüllü bir düello başladı!"
+  high-value-duel-result: "<blue>[Duyuru] <green>%winner% <yellow>, <red>%loser% <yellow>ile olan <gold>%amount% <yellow>ödüllü düelloyu kazandı ve <gold>%winnings% <yellow>kazandı!"
+  stats-header: "<dark_gray><strikethrough>-----------------<reset> <dark_gray>[<aqua>cDuello<dark_gray>] <dark_gray><strikethrough>-----------------"
+  stats-wins: "<yellow>Kazanılan Düellolar: <green>%wins%"
+  stats-losses: "<yellow>Kaybedilen Düellolar: <red>%losses%"
+  stats-total: "<yellow>Toplam Düellolar: <gold>%total%"
+  stats-winrate: "<yellow>Kazanma Oranı: <gold>%winrate%%"
+  stats-money-won: "<yellow>Kazanılan Para: <green>%money_won%"
+  stats-money-lost: "<yellow>Kaybedilen Para: <red>%money_lost%"
+  stats-net-earnings: "<yellow>Net Kazanç: <gold>%net_earnings%"
+  stats-footer: "<dark_gray><strikethrough>-----------------------------------------------"
+  help-title: "<dark_gray><strikethrough>-----------------<reset> <dark_gray>[<aqua>cDuello<dark_gray>] <dark_gray><strikethrough>-----------------"
+  help-duel-player: "<yellow>/duel <player> <gray>- Oyuncuya düello isteği gönder"
+  help-duel-money: "<yellow>/duel <player> <amount> <gray>- Para ödüllü düello isteği gönder"
+  help-duel-accept: "<yellow>/duel accept <gray>- Bekleyen düello isteğini kabul et"
+  help-duel-deny: "<yellow>/duel deny <gray>- Bekleyen düello isteğini reddet"
+  help-duel-stats: "<yellow>/duel stats [player] <gray>- Düello istatistiklerini görüntüle"
+  help-duel-reload: "<yellow>/duel reload <gray>- Eklenti yapılandırmasını yeniden yükle"
+  help-footer: "<dark_gray><strikethrough>-----------------------------------------------"
+
+# Düello yapılandırması
+duels:
+  # Düello isteğinin süresinin dolması için gereken saniye
+  request-timeout: 30
+  
+  # Düello başlamadan önce geri sayım süresi (saniye)
+  countdown: 5
+  
+  # Düellodan sonra oyuncuları orijinal konumlarına geri ışınla
+  teleport-back: true
+  
+  # Düellodan sonra oyuncuları iyileştir
+  heal-after-duel: true
+  
+  # Düellodan sonra efektleri temizle
+  clear-effects: true
+  
+  # Düello sırasında envanter koru
+  keep-inventory: false
+  
+  # Düello sırasında oyunculara izin verilen komutlar
+  allowed-commands:
+    - "tell"
+    - "msg"
+    - "r"
+    - "duel"
+    - "duello"
+  
+  # Arena ayarları
+  arenas:
+    enabled: false
+    list:
+      arena1:
+        name: "Klasik Arena"
+        world: "world"
+        pos1:
+          x: 100
+          y: 64
+          z: 100
+        pos2:
+          x: 100
+          y: 64
+          z: 150
+      arena2:
+        name: "PvP Arena"
+        world: "world"
+        pos1:
+          x: 200
+          y: 64
+          z: 200
+        pos2:
+          x: 200
+          y: 64
+          z: 250
+
+# Ekonomi ayarları
+economy:
+  # Kazanan oyuncuya giden toplam bahis yüzdesi (kalan sunucuya gider)
+  winner-percentage: 80.0
+  
+  # Minimum bahis tutarı
+  min-bet-amount: 10.0
+  
+  # Maksimum bahis tutarı
+  max-bet-amount: 1000000.0
+  
+  # Yüksek değerli düello duyurusu eşiği (toplam bahis)
+  announcement-threshold: 200000.0
+
+# İstatistik izleme
+statistics:
+  enabled: true
+  save-interval: 300 # İstatistiklerin dosyaya kaydedilmesi için gereken süre (saniye)
+
+# Hata ayıklama modu
+debug: false 
