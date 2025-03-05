@@ -13,6 +13,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.Location;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +21,7 @@ import java.util.UUID;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Handles events related to duels
@@ -31,6 +33,7 @@ public class DuelListener implements Listener {
     private final MessageManager messageManager;
     private final Map<UUID, Long> lastMovementWarning = new HashMap<>();
     private final Set<UUID> playersInCountdown = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Map<UUID, Location> respawnLocations = new HashMap<>();
 
     public DuelListener(Main plugin, DuelManager duelManager) {
         this.plugin = plugin;
@@ -44,12 +47,13 @@ public class DuelListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
+        UUID playerUuid = player.getUniqueId();
         
-        if (!duelManager.isInDuel(player.getUniqueId())) {
+        if (!duelManager.isInDuel(playerUuid)) {
             return;
         }
         
-        Duel duel = duelManager.getActiveDuel(player.getUniqueId());
+        Duel duel = duelManager.getActiveDuel(playerUuid);
         if (duel == null) {
             return;
         }
@@ -61,8 +65,54 @@ public class DuelListener implements Listener {
             event.setDroppedExp(0);
         }
         
+        // Oyuncunun orijinal konumunu respawn için sakla
+        if (duel.getChallenger().equals(playerUuid)) {
+            respawnLocations.put(playerUuid, duel.getChallengerLocation());
+        } else {
+            respawnLocations.put(playerUuid, duel.getChallengedLocation());
+        }
+        
         // End the duel with the opponent as the winner
-        duelManager.endDuel(duel, duel.getOpponent(player.getUniqueId()));
+        duelManager.endDuel(duel, duel.getOpponent(playerUuid));
+    }
+    
+    /**
+     * Handle player respawn after dying in a duel
+     * Teleport them back to their original location
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH)
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        UUID playerUuid = player.getUniqueId();
+        
+        // Saklanan respawn konumu varsa, oyuncuyu buraya ışınla
+        if (respawnLocations.containsKey(playerUuid)) {
+            Location respawnLoc = respawnLocations.get(playerUuid);
+            if (respawnLoc != null) {
+                // Debug log
+                if (plugin.getConfig().getBoolean("debug", false)) {
+                    plugin.getLogger().info("Setting respawn location for " + player.getName() + " to " + 
+                                           respawnLoc.getWorld().getName() + "," + 
+                                           respawnLoc.getX() + "," + respawnLoc.getY() + "," + respawnLoc.getZ());
+                }
+                
+                // Set spawn location with a slight delay to ensure it works
+                event.setRespawnLocation(respawnLoc);
+                
+                // Schedule a teleport just to be sure (belt and suspenders approach)
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (player.isOnline()) {
+                            player.teleport(respawnLoc);
+                        }
+                    }
+                }.runTaskLater(plugin, 1L);
+            }
+            
+            // Işınlandıktan sonra konum kaydını temizle
+            respawnLocations.remove(playerUuid);
+        }
     }
 
     /**
@@ -162,7 +212,7 @@ public class DuelListener implements Listener {
      *
      * @param event Hareket olayı
      */
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
         // Hemen kontrol edelim ve erken çıkış imkanı verelim
         if (playersInCountdown.isEmpty()) {

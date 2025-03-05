@@ -1,28 +1,26 @@
 name: cDuello
-version: '${project.version}'
+version: 1.0.0
 main: dev.itscactus.cduello.Main
-api-version: '1.21.4'
-description: Gelişmiş düello eklentisi
-authors: [itscactusdev]
-website: https://itscactus.dev
+api-version: 1.21.4
+author: itscactusdev
+description: Gelişmiş bir düello eklentisi
+depend: [Vault]
+softdepend: [PlaceholderAPI]
 
 commands:
   duello:
     description: Düello komutları
-    usage: /duello <oyuncu> [bahis]
-    aliases: [duel, vs, duelloarena]
+    usage: /duello <oyuncu|kabul|reddet|iptal|çık|sıralama>
+    aliases: [duel]
+  dueladmin:
+    description: Düello yönetim komutları
+    usage: /dueladmin <reload|arena|stats>
+    permission: cduello.admin
 
 permissions:
-  cduello.player:
-    description: Oyuncu izinleri
-    default: true
-    children:
-      cduello.duel: true
-      cduello.stats: true
   cduello.admin:
-    description: Admin izinleri
+    description: Düello eklentisinin yönetim komutlarına erişim sağlar
     default: op
-    children:
-      cduello.player: true
-      cduello.reload: true
-      cduello.arena: true 
+  cduello.use:
+    description: Temel düello komutlarını kullanma izni
+    default: true 

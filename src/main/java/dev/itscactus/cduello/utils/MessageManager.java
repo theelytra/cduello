@@ -101,6 +101,9 @@ public class MessageManager {
         // Yer tutucuları değiştir
         String processedMessage = rawMessage;
         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            // % ile başlayan eski placeholderlar için
+            processedMessage = processedMessage.replace("%" + entry.getKey() + "%", entry.getValue());
+            // { } ile çevrili yeni placeholderlar için
             processedMessage = processedMessage.replace("{" + entry.getKey() + "}", entry.getValue());
         }
         
@@ -283,6 +286,21 @@ public class MessageManager {
     public void close() {
         if (adventure != null) {
             adventure.close();
+        }
+    }
+
+    /**
+     * Mesaj yöneticisini yeniden yükler ve önbelleği temizler
+     */
+    public void reload() {
+        // Mesaj önbelleğini temizle
+        messageCache.clear();
+        cachedPrefix = null;
+        lastCacheClear = System.currentTimeMillis();
+        
+        // Debug mesajı yazdır
+        if (plugin.getConfig().getBoolean("debug", false)) {
+            plugin.getLogger().info("Mesaj yöneticisi yeniden yüklendi.");
         }
     }
 } 

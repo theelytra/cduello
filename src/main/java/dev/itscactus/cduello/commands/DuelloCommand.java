@@ -4,6 +4,7 @@ import dev.itscactus.cduello.Main;
 import dev.itscactus.cduello.managers.ArenaManager;
 import dev.itscactus.cduello.managers.DuelManager;
 import dev.itscactus.cduello.managers.EconomyManager;
+import dev.itscactus.cduello.utils.LeaderboardGUI;
 import dev.itscactus.cduello.utils.MessageManager;
 import dev.itscactus.cduello.utils.MessageUtils;
 import net.kyori.adventure.text.Component;
@@ -81,50 +82,34 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
 
         switch (subCommand) {
             case "accept":
+            case "kabul":
                 handleAccept(player);
                 break;
             case "deny":
+            case "reddet":
                 handleDeny(player);
                 break;
             case "stats":
+            case "istatistik":
                 handleStats(player, args);
                 break;
             case "reload":
-                if (!player.hasPermission("cduello.admin")) {
-                    messageManager.sendMessage(player, "no-permission");
-                    return true;
-                }
-                plugin.reloadConfig();
-                messageManager.sendMessage(player, plugin.getMessageManager().format(MessageUtils.getPrefix() + "<green>Yapılandırma yeniden yüklendi!"));
+                handleAdminCommand(player, args);
                 break;
             case "arena":
                 handleArenaCommand(player, args);
                 break;
+            case "admin":
+                handleAdminCommand(player, args);
+                break;
+            case "sıralama":
+            case "top":
+                openLeaderboard(player);
+                break;
             default:
-                // Eğer ilk argüman bir oyuncu ismi ise
-                Player target = Bukkit.getPlayer(subCommand);
-                if (target == null) {
-                    messageManager.sendMessage(player, "player-not-found");
-                    return true;
-                }
-
-                if (target.getUniqueId().equals(player.getUniqueId())) {
-                    messageManager.sendMessage(player, "no-self-duel");
-                    return true;
-                }
-
-                // Bu bir para düellosu mu kontrol et
-                if (args.length >= 2 && economyManager.isEconomyEnabled()) {
-                    try {
-                        double amount = Double.parseDouble(args[1]);
-                        handleMoneyDuel(player, target, amount);
-                    } catch (NumberFormatException e) {
-                        messageManager.sendMessage(player, plugin.getMessageManager().format(MessageUtils.getPrefix() + "<red>Geçersiz miktar! Kullanım: /" + label + " <oyuncu> <miktar>"));
-                    }
-                } else {
-                    // Normal düello
-                    duelManager.sendDuelRequest(player, target);
-                }
+                // Diğer tüm durumlarda oyuncu adı olarak kabul et ve düello isteği gönder
+                Player target = Bukkit.getPlayerExact(subCommand);
+                handleDuelRequest(player, args);
                 break;
         }
 
@@ -232,11 +217,14 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
         String arenaCommand = args[1].toLowerCase();
         
         switch (arenaCommand) {
+            case "list":
             case "liste":
                 arenaManager.listArenas(player);
                 break;
                 
+            case "create":
             case "oluştur":
+            case "olustur":
                 if (args.length < 4) {
                     messageManager.sendMessage(player, "arena-create-usage");
                     return;
@@ -258,6 +246,7 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
                 if (created) {
                     Map<String, String> placeholders = new HashMap<>();
                     placeholders.put("arena", arenaName);
+                    placeholders.put("id", arenaId);
                     messageManager.sendMessage(player, "arena-created", placeholders);
                 } else {
                     Map<String, String> placeholders = new HashMap<>();
@@ -266,6 +255,7 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
                 }
                 break;
                 
+            case "delete":
             case "sil":
                 if (args.length < 3) {
                     messageManager.sendMessage(player, "arena-delete-usage");
@@ -287,6 +277,8 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
                 }
                 break;
                 
+            case "rename":
+            case "yenidenadlandir":
             case "yenidenadlandır":
                 if (args.length < 4) {
                     messageManager.sendMessage(player, "arena-rename-usage");
@@ -310,6 +302,7 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
                 }
                 break;
                 
+            case "info":
             case "bilgi":
                 if (args.length < 3) {
                     messageManager.sendMessage(player, "arena-info-usage");
@@ -330,6 +323,8 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
                 messageManager.sendMessage(player, "arena-pos2-set");
                 break;
                 
+            case "enable":
+            case "etkinlestir":
             case "etkinleştir":
                 if (args.length < 3) {
                     messageManager.sendMessage(player, "arena-toggle-usage");
@@ -350,7 +345,9 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
                 }
                 break;
                 
+            case "disable":
             case "devredışıbırak":
+            case "devredisibirak":
                 if (args.length < 3) {
                     messageManager.sendMessage(player, "arena-toggle-usage");
                     return;
@@ -376,6 +373,83 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    /**
+     * Admin komutlarını işler
+     * 
+     * @param player Komutu kullanan oyuncu
+     * @param args Komut argümanları
+     */
+    private void handleAdminCommand(Player player, String[] args) {
+        // Admin permission check
+        if (!player.hasPermission("cduello.admin")) {
+            messageManager.sendMessage(player, "no-permission");
+            return;
+        }
+        
+        // Show help message if no subcommand is provided
+        if (args.length < 2) {
+            messageManager.sendMessage(player, "admin-help");
+            return;
+        }
+        
+        String adminCommand = args[1].toLowerCase();
+        
+        switch (adminCommand) {
+            case "reload":
+                plugin.reloadConfig();
+                messageManager.sendMessage(player, "config-reloaded");
+                break;
+            
+            default:
+                messageManager.sendMessage(player, "admin-help");
+                break;
+        }
+    }
+
+    /**
+     * Düello isteklerini işler
+     * 
+     * @param player Komutu kullanan oyuncu
+     * @param args Komut argümanları
+     */
+    private void handleDuelRequest(Player player, String[] args) {
+        String targetName = args[0];
+        Player target = Bukkit.getPlayer(targetName);
+        
+        if (target == null) {
+            messageManager.sendMessage(player, "player-not-found");
+            return;
+        }
+        
+        if (target.getUniqueId().equals(player.getUniqueId())) {
+            messageManager.sendMessage(player, "no-self-duel");
+            return;
+        }
+        
+        // Bu bir para düellosu mu kontrol et
+        if (args.length >= 2 && economyManager.isEconomyEnabled()) {
+            try {
+                double amount = Double.parseDouble(args[1]);
+                handleMoneyDuel(player, target, amount);
+            } catch (NumberFormatException e) {
+                messageManager.sendMessage(player, "invalid-amount");
+            }
+        } else {
+            // Normal düello
+            duelManager.sendDuelRequest(player, target);
+        }
+    }
+
+    /**
+     * Sıralama menüsünü açar
+     * 
+     * @param player Oyuncu
+     */
+    private void openLeaderboard(Player player) {
+        // Varsayılan olarak galibiyet sıralaması göster
+        new LeaderboardGUI(plugin, plugin.getDatabaseManager(), "wins").open(player);
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (!(sender instanceof Player)) {
@@ -389,22 +463,33 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            List<String> completions = player.hasPermission("cduello.admin") ? ADMIN_SUBCOMMANDS : SUBCOMMANDS;
+            String input = args[0].toLowerCase();
+            List<String> completions = new ArrayList<>();
             
-            List<String> playerNames = Bukkit.getOnlinePlayers().stream()
-                    .filter(p -> !p.getUniqueId().equals(player.getUniqueId()))
-                    .map(Player::getName)
-                    .collect(Collectors.toList());
+            // Add command suggestions
+            List<String> subCommands = player.hasPermission("cduello.admin") ? ADMIN_SUBCOMMANDS : SUBCOMMANDS;
+            for (String cmd : subCommands) {
+                if (cmd.toLowerCase().startsWith(input)) {
+                    completions.add(cmd);
+                }
+            }
             
-            completions.addAll(playerNames);
+            // Add player name suggestions
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (p.getUniqueId().equals(player.getUniqueId())) {
+                    continue; // Skip the sender
+                }
+                
+                if (p.getName().toLowerCase().startsWith(input)) {
+                    completions.add(p.getName());
+                }
+            }
             
-            return completions.stream()
-                    .filter(c -> c.toLowerCase().startsWith(args[0].toLowerCase()))
-                    .collect(Collectors.toList());
+            return completions;
         } else if (args.length == 2) {
             String subCommand = args[0].toLowerCase();
             
-            if (subCommand.equals("istatistik")) {
+            if (subCommand.equals("istatistik") || subCommand.equals("stats")) {
                 return filterCompletions(getOnlinePlayerNames(), args[1]);
             } else if (subCommand.equals("admin") && player.hasPermission("cduello.admin")) {
                 return filterCompletions(ADMIN_COMMANDS, args[1]);
@@ -434,8 +519,18 @@ public class DuelloCommand implements CommandExecutor, TabCompleter {
     }
 
     private List<String> filterCompletions(List<String> completions, String input) {
+        if (completions == null) {
+            return new ArrayList<>();
+        }
+        
+        if (input == null || input.isEmpty()) {
+            return new ArrayList<>(completions);
+        }
+        
+        String lowerInput = input.toLowerCase();
+        
         return completions.stream()
-                .filter(c -> c.toLowerCase().startsWith(input.toLowerCase()))
+                .filter(c -> c != null && c.toLowerCase().startsWith(lowerInput))
                 .collect(Collectors.toList());
     }
 } 

@@ -11,6 +11,38 @@ Minecraft sunucuları için Paper 1.21.4 üzerinde çalışan basit ama güçlü
 - Özelleştirilebilir mesajlar
 - İzin tabanlı erişim kontrolü
 
+## Yeni Özellikler
+
+### SQLite Veri Depolama
+- Oyuncu istatistiklerini SQLite veritabanında saklar
+- Veri kaybını önlemek için düzenli otomatik kaydetme
+- Etkili ve hızlı veri erişimi
+
+### Sıralama Sistemi
+- `/duello sıralama` komutu ile oyuncu sıralamalarını görüntüleme
+- Oyuncu kafaları ile görsel sıralama menüsü
+- En çok galibiyet, en çok para kazanan ve en iyi oran kriterlerine göre sıralama
+
+### PlaceholderAPI Entegrasyonu
+- `%duello_siralama_(numara)%` formatında yer tutucular
+- Oyuncu istatistikleri için yer tutucular:
+  - `%duello_wins%` - Galibiyet sayısı
+  - `%duello_losses%` - Mağlubiyet sayısı
+  - `%duello_total_duels%` - Toplam düello sayısı
+  - `%duello_win_ratio%` - Kazanma oranı
+  - `%duello_money_won%` - Kazanılan para
+  - `%duello_money_lost%` - Kaybedilen para
+
+### İstatistik Sistemi Geliştirmeleri
+- Gerçek zamanlı istatistik takibi
+- Para kazancı ve kaybı istatistikleri
+- Kazanma oranı hesaplamaları
+
+### Admin Komutları
+- `/dueladmin reload` - Konfigürasyonu yeniden yükler
+- `/dueladmin arena` - Arena yönetim komutları
+- `/dueladmin stats` - İstatistik yönetim komutları
+
 ## Kurulum
 
 1. Eklentinin en son sürümünü sürümler bölümünden indirin.

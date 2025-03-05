@@ -4,53 +4,53 @@
 # Renk kodları için: https://docs.advntr.dev/minimessage/format.html
 messages:
   prefix: "<dark_gray>[<aqua>cDuello<dark_gray>] <reset>"
-  duel-sent: "<yellow>Düello isteği <green>%player%<yellow> adlı oyuncuya gönderildi!"
-  duel-received: "<green>%player% <yellow>seni düelloya davet etti. <green>/duel accept <yellow>veya <red>/duel deny<yellow>."
-  duel-request-sent: "<yellow>Düello isteği <green>%player%<yellow> adlı oyuncuya gönderildi!"
-  duel-request-received: "<green>%player% <yellow>seni düelloya davet etti. <green>/duel accept <yellow>veya <red>/duel deny<yellow>."
-  duel-request-sent-money: "<yellow>Düello isteği <green>%player%<yellow> adlı oyuncuya <gold>%amount%<yellow> ödül için gönderildi!"
-  duel-request-received-money: "<green>%player% <yellow>seni <gold>%amount%<yellow> ödüllü düelloya davet etti. <green>/duel accept <yellow>veya <red>/duel deny<yellow>."
-  duel-request-timeout-sender: "<yellow>Düello isteğin <red>%player% <yellow>adlı oyuncuya süresi doldu!"
-  duel-request-timeout-target: "<yellow>Düello isteği <red>%player% <yellow>adlı oyuncudan süresi doldu!"
-  duel-request-denied-sender: "<red>%player% <yellow>düello isteğini reddetti!"
+  duel-sent: "<yellow>Düello isteği <green>{player}<yellow> adlı oyuncuya gönderildi!"
+  duel-received: "<green>{player} <yellow>seni düelloya davet etti. <green>/duel accept <yellow>veya <red>/duel deny<yellow>."
+  duel-request-sent: "<yellow>Düello isteği <green>{player}<yellow> adlı oyuncuya gönderildi!"
+  duel-request-received: "<green>{player} <yellow>seni düelloya davet etti. <green>/duel accept <yellow>veya <red>/duel deny<yellow>."
+  duel-request-sent-money: "<yellow>Düello isteği <green>{player}<yellow> adlı oyuncuya <gold>{amount}<yellow> ödül için gönderildi!"
+  duel-request-received-money: "<green>{player} <yellow>seni <gold>{amount}<yellow> ödüllü düelloya davet etti. <green>/duel accept <yellow>veya <red>/duel deny<yellow>."
+  duel-request-timeout-sender: "<yellow>Düello isteğin <red>{player} <yellow>adlı oyuncuya süresi doldu!"
+  duel-request-timeout-target: "<yellow>Düello isteği <red>{player} <yellow>adlı oyuncudan süresi doldu!"
+  duel-request-denied-sender: "<red>{player} <yellow>düello isteğini reddetti!"
   duel-request-denied-target: "<yellow>Düello isteğini reddettiniz."
-  duel-accepted: "<green>%player% <yellow>düello isteğini kabul etti!"
-  duel-denied: "<red>%player% <yellow>düello isteğini reddetti!"
-  duel-expired: "<yellow>Düello isteğin <red>%player% <yellow>adlı oyuncuya süresi doldu!"
+  duel-accepted: "<green>{player} <yellow>düello isteğini kabul etti!"
+  duel-denied: "<red>{player} <yellow>düello isteğini reddetti!"
+  duel-expired: "<yellow>Düello isteğin <red>{player} <yellow>adlı oyuncuya süresi doldu!"
   no-pending-requests: "<red>Bekleyen düello isteğin yok!"
   already-in-duel: "<red>Zaten bir düellondasın!"
-  target-in-duel: "<red>%player% zaten bir düelloda!"
+  target-in-duel: "<red>{player} zaten bir düelloda!"
   duel-status-changed: "<red>Düello durumu değişti, istek artık geçerli değil."
   sender-offline: "<red>Düello isteğini gönderen oyuncu artık çevrimiçi değil."
-  duel-countdown: "<yellow>Düello <red>%seconds% <yellow>saniye içinde başlıyor!"
-  duel-countdown-money: "<yellow>Düello <gold>%amount% <yellow>ödül için <red>%seconds% <yellow>saniye içinde başlıyor!"
+  duel-countdown: "<yellow>Düello <red>{seconds} <yellow>saniye içinde başlıyor!"
+  duel-countdown-money: "<yellow>Düello <gold>{amount} <yellow>ödül için <red>{seconds} <yellow>saniye içinde başlıyor!"
   duel-countdown-freeze: "<red>Geri sayım sırasında hareket edemezsiniz!"
   duel-started: "<yellow>Düello başladı! İyi şanslar!"
-  duel-started-money: "<yellow>Düello <gold>%amount% <yellow>ödül için başladı! İyi şanslar!"
+  duel-started-money: "<yellow>Düello <gold>{amount} <yellow>ödül için başladı! İyi şanslar!"
   duel-won: "<green>Düelloyu kazandın!"
   duel-lost: "<red>Düelloyu kaybettin!"
-  duel-won-money: "<green>Düelloyu kazandın ve <gold>%amount%<green> kazandın!"
-  duel-lost-money: "<red>Düelloyu kaybettin ve <gold>%amount%<red> kaybettin!"
+  duel-won-money: "<green>Düelloyu kazandın ve <gold>{amount}<green> kazandın!"
+  duel-lost-money: "<red>Düelloyu kaybettin ve <gold>{amount}<red> kaybettin!"
   player-not-found: "<red>Oyuncu bulunamadı!"
   no-self-duel: "<red>Kendine düello isteği gönderemezsin!"
   no-permission: "<red>Bu komutu kullanmak için yetkin yok!"
   no-commands-in-duel: "<red>Düello sırasında bu komutu kullanamazsın!"
   economy-not-enabled: "<red>Ekonomi sistemi bu sunucuda etkin değil!"
-  bet-too-low: "<red>Minimum bahis tutarı <gold>%amount%<red>!"
-  bet-too-high: "<red>Maksimum bahis tutarı <gold>%amount%<red>!"
-  insufficient-funds: "<red>Yeterli paran yok! <gold>%amount%<red> paraya ihtiyacın var."
-  target-insufficient-funds: "<red>%player% bu bahis için yeterli paraya sahip değil!"
-  sender-insufficient-funds: "<red>%player% artık bu bahis için yeterli paraya sahip değil!"
-  high-value-duel-announcement: "<blue>[Duyuru] <green>%player1% <yellow>ve <green>%player2% <yellow>arasında <gold>%amount% <yellow>ödüllü bir düello başladı!"
-  high-value-duel-result: "<blue>[Duyuru] <green>%winner% <yellow>, <red>%loser% <yellow>ile olan <gold>%amount% <yellow>ödüllü düelloyu kazandı ve <gold>%winnings% <yellow>kazandı!"
+  bet-too-low: "<red>Minimum bahis tutarı <gold>{amount}<red>!"
+  bet-too-high: "<red>Maksimum bahis tutarı <gold>{amount}<red>!"
+  insufficient-funds: "<red>Yeterli paran yok! <gold>{amount}<red> paraya ihtiyacın var."
+  target-insufficient-funds: "<red>{player} bu bahis için yeterli paraya sahip değil!"
+  sender-insufficient-funds: "<red>{player} artık bu bahis için yeterli paraya sahip değil!"
+  high-value-duel-announcement: "<blue>[Duyuru] <green>{player1} <yellow>ve <green>{player2} <yellow>arasında <gold>{amount} <yellow>ödüllü bir düello başladı!"
+  high-value-duel-result: "<blue>[Duyuru] <green>{winner} <yellow>, <red>{loser} <yellow>ile olan <gold>{amount} <yellow>ödüllü düelloyu kazandı ve <gold>{winnings} <yellow>kazandı!"
   stats-header: "<dark_gray><strikethrough>-----------------<reset> <dark_gray>[<aqua>cDuello<dark_gray>] <dark_gray><strikethrough>-----------------"
-  stats-wins: "<yellow>Kazanılan Düellolar: <green>%wins%"
-  stats-losses: "<yellow>Kaybedilen Düellolar: <red>%losses%"
-  stats-total: "<yellow>Toplam Düellolar: <gold>%total%"
-  stats-winrate: "<yellow>Kazanma Oranı: <gold>%winrate%%"
-  stats-money-won: "<yellow>Kazanılan Para: <green>%money_won%"
-  stats-money-lost: "<yellow>Kaybedilen Para: <red>%money_lost%"
-  stats-net-earnings: "<yellow>Net Kazanç: <gold>%net_earnings%"
+  stats-wins: "<yellow>Kazanılan Düellolar: <green>{wins}"
+  stats-losses: "<yellow>Kaybedilen Düellolar: <red>{losses}"
+  stats-total: "<yellow>Toplam Düellolar: <gold>{total}"
+  stats-winrate: "<yellow>Kazanma Oranı: <gold>{winrate}%"
+  stats-money-won: "<yellow>Kazanılan Para: <green>{money_won}"
+  stats-money-lost: "<yellow>Kaybedilen Para: <red>{money_lost}"
+  stats-net-earnings: "<yellow>Net Kazanç: <gold>{net_earnings}"
   stats-footer: "<dark_gray><strikethrough>-----------------------------------------------"
   help-title: "<dark_gray><strikethrough>-----------------<reset> <dark_gray>[<aqua>cDuello<dark_gray>] <dark_gray><strikethrough>-----------------"
   help-duel-player: "<yellow>/duel <player> <gray>- Oyuncuya düello isteği gönder"
@@ -60,6 +60,8 @@ messages:
   help-duel-stats: "<yellow>/duel stats [player] <gray>- Düello istatistiklerini görüntüle"
   help-duel-reload: "<yellow>/duel reload <gray>- Eklenti yapılandırmasını yeniden yükle"
   help-footer: "<dark_gray><strikethrough>-----------------------------------------------"
+  config-reloaded: "<green>Yapılandırma dosyası yeniden yüklendi!"
+  invalid-amount: "<red>Geçersiz miktar! Kullanım: /duel <oyuncu> <miktar>"
   
   # Arena mesajları
   arena-list-header: "<gold>====== <yellow>Arena Listesi <gold>======"
@@ -70,13 +72,19 @@ messages:
   arena-info-pos: "<yellow>Dünya: <gold>{world} <yellow>| Konum 1: <gold>{pos1} <yellow>| Konum 2: <gold>{pos2}"
   arena-info-status: "<yellow>Durum: <gold>{status}"
   arena-info-footer: "<gold>============================="
+  arena-create-usage: "<yellow>Kullanım: /duel arena oluştur <id> <isim>"
+  arena-delete-usage: "<yellow>Kullanım: /duel arena sil <id>"
+  arena-rename-usage: "<yellow>Kullanım: /duel arena yenidenadlandır <id> <yeni isim>"
+  arena-info-usage: "<yellow>Kullanım: /duel arena bilgi <id>"
+  arena-toggle-usage: "<yellow>Kullanım: /duel arena [etkinleştir/devreDışıBırak] <id>"
+  arena-positions-not-set: "<red>Arena pozisyonları ayarlanmamış! Önce /duel arena pos1 ve /duel arena pos2 kullanın."
   arena-created: "<green>Arena başarıyla oluşturuldu: <gold>{name} <green>(ID: <gold>{id}<green>)"
-  arena-deleted: "<green>Arena başarıyla silindi: <gold>{name} <green>(ID: <gold>{id}<green>)"
-  arena-renamed: "<green>Arena adı değiştirildi: <gold>{old_name} <green>-> <gold>{new_name}"
-  arena-pos1-set: "<green>Arena <gold>{name} <green>için 1. konum ayarlandı."
-  arena-pos2-set: "<green>Arena <gold>{name} <green>için 2. konum ayarlandı."
-  arena-enabled: "<green>Arena <gold>{name} <green>etkinleştirildi."
-  arena-disabled: "<green>Arena <gold>{name} <green>devre dışı bırakıldı."
+  arena-deleted: "<green>Arena başarıyla silindi: <gold>{arena}"
+  arena-renamed: "<green>Arena adı değiştirildi: <gold>{arena} <green>-> <gold>{name}"
+  arena-pos1-set: "<green>Arena için 1. konum ayarlandı."
+  arena-pos2-set: "<green>Arena için 2. konum ayarlandı."
+  arena-enabled: "<green>Arena <gold>{arena} <green>etkinleştirildi."
+  arena-disabled: "<green>Arena <gold>{arena} <green>devre dışı bırakıldı."
   arena-system-enabled: "<green>Arena sistemi etkinleştirildi."
   arena-system-disabled: "<green>Arena sistemi devre dışı bırakıldı."
   arena-not-found: "<red>Arena bulunamadı: <gold>{arena}"
@@ -88,9 +96,17 @@ messages:
   arena-pos2-set-failed: "<red>Arena 2. konumu ayarlanamadı! Lütfen tekrar deneyin."
   arena-enable-failed: "<red>Arena etkinleştirilemedi! Lütfen tekrar deneyin."
   arena-disable-failed: "<red>Arena devre dışı bırakılamadı! Lütfen tekrar deneyin."
+  admin-help: "<yellow>Admin komutları: /duel admin reload"
   
   # Arena teleportasyon mesajları
   teleported-to-arena: "<green>Arena <gold>{arena}<green>'ya ışınlandınız. Düello başlıyor!"
+
+# Veritabanı ayarları
+database:
+  # SQLite veritabanı dosyası
+  file: "database.db"
+  # Config'den veritabanına migrasyon tamamlandı mı?
+  migration-completed: false
 
 # Düello yapılandırması
 duels:
@@ -122,7 +138,7 @@ duels:
   
   # Arena ayarları
   arenas:
-    enabled: false
+    enabled: true
     list:
       arena1:
         name: "Klasik Arena"
@@ -167,4 +183,63 @@ statistics:
   save-interval: 300 # İstatistiklerin dosyaya kaydedilmesi için gereken süre (saniye)
 
 # Hata ayıklama modu
-debug: false 
+debug: true
+
+# Düello ayarları
+duel:
+  # Düello zaman aşımı süresi (saniye)
+  timeout: 30
+  # Düello mesafesi (blok)
+  distance: 10
+  # Maksimum düello süresi (saniye)
+  max-duration: 300
+  # İzin verilen minimum bahis miktarı
+  min-bet: 0
+  # İzin verilen maksimum bahis miktarı (0 = sınırsız)
+  max-bet: 0
+
+# Arena ayarları
+arena:
+  # Arena kullanımını etkinleştirme (false = kapalı, true = açık)
+  enabled: true
+  
+  # Varsayılan arenalar
+  arenas:
+    klasik:
+      name: "Klasik Arena"
+      world: "world"
+      pos1:
+        x: 100
+        y: 65
+        z: 100
+      pos2:
+        x: 110
+        y: 65
+        z: 110
+      enabled: true
+    pvp:
+      name: "PvP Arena"
+      world: "world"
+      pos1:
+        x: 150
+        y: 65
+        z: 150
+      pos2:
+        x: 160
+        y: 65
+        z: 160
+      enabled: true
+
+# İstatistik ayarları
+stats:
+  # İstatistik takibini etkinleştir (false = kapalı, true = açık)
+  enabled: true
+  # İstatistiklerin otomatik kaydedilme süresi (saniye)
+  save-interval: 300
+
+# Veritabanı ayarları
+database:
+  # SQLite veritabanı dosyası
+  file: "database.db"
+  # Yapılandırmadan veritabanına geçiş tamamlandı mı?
+  migration-completed: false 

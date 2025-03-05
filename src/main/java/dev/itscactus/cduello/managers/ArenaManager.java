@@ -2,6 +2,7 @@ package dev.itscactus.cduello.managers;
 
 import dev.itscactus.cduello.Main;
 import dev.itscactus.cduello.models.Arena;
+import dev.itscactus.cduello.utils.DatabaseManager;
 import dev.itscactus.cduello.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -23,20 +24,121 @@ public class ArenaManager {
 
     private final Main plugin;
     private final MessageManager messageManager;
+    private final DatabaseManager databaseManager;
     private final Map<String, Arena> arenas = new ConcurrentHashMap<>();
     private boolean enabled;
     private boolean isLoading = false;
     private boolean isSaving = false;
+    private boolean migrationCompleted = false;
 
     public ArenaManager(Main plugin) {
         this.plugin = plugin;
         this.messageManager = plugin.getMessageManager();
+        this.databaseManager = new DatabaseManager(plugin);
         this.enabled = plugin.getConfig().getBoolean("duels.arenas.enabled", false);
+        
+        // Config'den veritabanına taşıma işlemini kontrol et
+        checkConfigMigration();
+        
+        // Arenaları yükle
         loadArenas();
     }
 
     /**
-     * Arenaları yapılandırma dosyasından asenkron olarak yükler
+     * Config'den veritabanına geçiş kontrolü yapar
+     */
+    private void checkConfigMigration() {
+        if (plugin.getConfig().getBoolean("database.migration-completed", false)) {
+            migrationCompleted = true;
+            return;
+        }
+        
+        // Debug mesajı
+        if (plugin.getConfig().getBoolean("debug", false)) {
+            plugin.getLogger().info("Config'den veritabanına arena verilerini taşıma işlemi başlatılıyor...");
+        }
+        
+        // Config'deki arena verileri
+        ConfigurationSection arenasSection = plugin.getConfig().getConfigurationSection("duels.arenas.list");
+        if (arenasSection != null) {
+            Map<String, Arena> configArenas = new HashMap<>();
+            
+            for (String arenaId : arenasSection.getKeys(false)) {
+                ConfigurationSection arenaSection = arenasSection.getConfigurationSection(arenaId);
+                
+                if (arenaSection == null) {
+                    continue;
+                }
+                
+                String name = arenaSection.getString("name", arenaId);
+                String worldName = arenaSection.getString("world", "world");
+                
+                World world = Bukkit.getWorld(worldName);
+                
+                if (world == null) {
+                    plugin.getLogger().warning("Arena için dünya bulunamadı: " + worldName);
+                    continue;
+                }
+                
+                ConfigurationSection pos1Section = arenaSection.getConfigurationSection("pos1");
+                ConfigurationSection pos2Section = arenaSection.getConfigurationSection("pos2");
+                
+                if (pos1Section == null || pos2Section == null) {
+                    plugin.getLogger().warning("Arena için konum bilgisi eksik: " + arenaId);
+                    continue;
+                }
+                
+                double x1 = pos1Section.getDouble("x");
+                double y1 = pos1Section.getDouble("y");
+                double z1 = pos1Section.getDouble("z");
+                
+                double x2 = pos2Section.getDouble("x");
+                double y2 = pos2Section.getDouble("y");
+                double z2 = pos2Section.getDouble("z");
+                
+                Location pos1 = new Location(world, x1, y1, z1);
+                Location pos2 = new Location(world, x2, y2, z2);
+                
+                Arena arena = new Arena(arenaId, name, world, pos1, pos2);
+                
+                boolean arenaEnabled = arenaSection.getBoolean("enabled", true);
+                arena.setEnabled(arenaEnabled);
+                
+                configArenas.put(arenaId, arena);
+            }
+            
+            // Arenaları veritabanına aktar
+            if (!configArenas.isEmpty()) {
+                databaseManager.saveAllArenas(configArenas).thenAccept(success -> {
+                    if (success) {
+                        if (plugin.getConfig().getBoolean("debug", false)) {
+                            plugin.getLogger().info(configArenas.size() + " arena başarıyla veritabanına aktarıldı.");
+                        }
+                        
+                        // Migrasyon tamamlandı işaretini ekle
+                        plugin.getConfig().set("database.migration-completed", true);
+                        plugin.saveConfig();
+                        migrationCompleted = true;
+                    } else {
+                        plugin.getLogger().warning("Arenaların bir kısmı veya tamamı veritabanına aktarılamadı!");
+                    }
+                });
+            } else {
+                // Migrasyon tamamlandı işaretini ekle (aktarılacak arena yoksa)
+                plugin.getConfig().set("database.migration-completed", true);
+                plugin.saveConfig();
+                migrationCompleted = true;
+            }
+        } else {
+            // Migrasyon tamamlandı işaretini ekle (config'de arena yoksa)
+            plugin.getConfig().set("database.migration-completed", true);
+            plugin.saveConfig();
+            migrationCompleted = true;
+        }
+    }
+
+    /**
+     * Arenaları veritabanından asenkron olarak yükler
      */
     public void loadArenas() {
         if (isLoading) {
@@ -45,72 +147,30 @@ public class ArenaManager {
         
         isLoading = true;
         
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    arenas.clear();
-                    
-                    ConfigurationSection arenasSection = plugin.getConfig().getConfigurationSection("duels.arenas.list");
-                    
-                    if (arenasSection == null) {
-                        return;
-                    }
-                    
-                    enabled = plugin.getConfig().getBoolean("duels.arenas.enabled", false);
-                    
-                    for (String arenaId : arenasSection.getKeys(false)) {
-                        ConfigurationSection arenaSection = arenasSection.getConfigurationSection(arenaId);
-                        
-                        if (arenaSection == null) {
-                            continue;
-                        }
-                        
-                        String name = arenaSection.getString("name", arenaId);
-                        String worldName = arenaSection.getString("world", "world");
-                        
-                        World world = Bukkit.getWorld(worldName);
-                        
-                        if (world == null) {
-                            plugin.getLogger().warning("Arena için dünya bulunamadı: " + worldName);
-                            continue;
-                        }
-                        
-                        ConfigurationSection pos1Section = arenaSection.getConfigurationSection("pos1");
-                        ConfigurationSection pos2Section = arenaSection.getConfigurationSection("pos2");
-                        
-                        if (pos1Section == null || pos2Section == null) {
-                            plugin.getLogger().warning("Arena için konum bilgisi eksik: " + arenaId);
-                            continue;
-                        }
-                        
-                        double x1 = pos1Section.getDouble("x");
-                        double y1 = pos1Section.getDouble("y");
-                        double z1 = pos1Section.getDouble("z");
-                        
-                        double x2 = pos2Section.getDouble("x");
-                        double y2 = pos2Section.getDouble("y");
-                        double z2 = pos2Section.getDouble("z");
-                        
-                        Location pos1 = new Location(world, x1, y1, z1);
-                        Location pos2 = new Location(world, x2, y2, z2);
-                        
-                        Arena arena = new Arena(arenaId, name, world, pos1, pos2);
-                        
-                        boolean arenaEnabled = arenaSection.getBoolean("enabled", true);
-                        arena.setEnabled(arenaEnabled);
-                        
-                        arenas.put(arenaId, arena);
-                    }
-                } finally {
-                    isLoading = false;
-                }
+        // Debug mesajı
+        if (plugin.getConfig().getBoolean("debug", false)) {
+            plugin.getLogger().info("Veritabanından arenalar yükleniyor...");
+        }
+        
+        databaseManager.loadArenas().thenAccept(loadedArenas -> {
+            arenas.clear();
+            arenas.putAll(loadedArenas);
+            
+            // Debug mesajı
+            if (plugin.getConfig().getBoolean("debug", false)) {
+                plugin.getLogger().info(arenas.size() + " arena başarıyla yüklendi.");
             }
-        }.runTaskAsynchronously(plugin);
+            
+            isLoading = false;
+        }).exceptionally(ex -> {
+            plugin.getLogger().severe("Arenalar yüklenirken hata oluştu: " + ex.getMessage());
+            isLoading = false;
+            return null;
+        });
     }
 
     /**
-     * Arenaları yapılandırma dosyasına asenkron olarak kaydeder
+     * Arenaları veritabanına asenkron olarak kaydeder
      * 
      * @return Tamamlandığında bildirecek CompletableFuture
      */
@@ -124,37 +184,27 @@ public class ArenaManager {
         isSaving = true;
         CompletableFuture<Void> future = new CompletableFuture<>();
         
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    ConfigurationSection arenasSection = plugin.getConfig().createSection("duels.arenas.list");
-                    
-                    plugin.getConfig().set("duels.arenas.enabled", enabled);
-                    
-                    for (Arena arena : arenas.values()) {
-                        ConfigurationSection arenaSection = arenasSection.createSection(arena.getId());
-                        
-                        arenaSection.set("name", arena.getName());
-                        arenaSection.set("world", arena.getWorldName());
-                        
-                        Location pos1 = arena.getPos1();
-                        ConfigurationSection pos1Section = arenaSection.createSection("pos1");
-                        pos1Section.set("x", pos1.getX());
-                        pos1Section.set("y", pos1.getY());
-                        pos1Section.set("z", pos1.getZ());
-                        
-                        Location pos2 = arena.getPos2();
-                        ConfigurationSection pos2Section = arenaSection.createSection("pos2");
-                        pos2Section.set("x", pos2.getX());
-                        pos2Section.set("y", pos2.getY());
-                        pos2Section.set("z", pos2.getZ());
-                    }
-                } finally {
-                    isSaving = false;
+        // Debug mesajı
+        if (plugin.getConfig().getBoolean("debug", false)) {
+            plugin.getLogger().info("Arenalar veritabanına kaydediliyor...");
+        }
+        
+        databaseManager.saveAllArenas(arenas).thenAccept(success -> {
+            if (success) {
+                if (plugin.getConfig().getBoolean("debug", false)) {
+                    plugin.getLogger().info("Tüm arenalar başarıyla kaydedildi.");
                 }
+                
+                // Arena sisteminin etkin durumunu config'te güncelle
+                plugin.getConfig().set("duels.arenas.enabled", enabled);
+                plugin.saveConfig();
+            } else {
+                plugin.getLogger().warning("Arenalar kaydedilirken bir hata oluştu!");
             }
-        }.runTaskAsynchronously(plugin);
+            
+            isSaving = false;
+            future.complete(null);
+        });
         
         return future;
     }
@@ -176,7 +226,37 @@ public class ArenaManager {
 
         Arena arena = new Arena(arenaId, name, world, pos1, pos2);
         arenas.put(arenaId, arena);
-        saveArenas();
+        
+        // Veritabanına kaydet
+        databaseManager.saveArena(arena).thenAccept(success -> {
+            if (!success) {
+                plugin.getLogger().warning("Arena veritabanına kaydedilemedi: " + arenaId);
+            }
+        });
+        
+        return true;
+    }
+
+    /**
+     * Yeni bir arena oluşturur
+     *
+     * @param arena Oluşturulacak arena nesnesi
+     * @return Başarılıysa true, değilse false
+     */
+    public boolean createArena(Arena arena) {
+        if (arenas.containsKey(arena.getId())) {
+            return false;
+        }
+
+        arenas.put(arena.getId(), arena);
+        
+        // Veritabanına kaydet
+        databaseManager.saveArena(arena).thenAccept(success -> {
+            if (!success) {
+                plugin.getLogger().warning("Arena veritabanına kaydedilemedi: " + arena.getId());
+            }
+        });
+        
         return true;
     }
 
@@ -192,7 +272,14 @@ public class ArenaManager {
         }
 
         arenas.remove(arenaId);
-        saveArenas();
+        
+        // Veritabanından sil
+        databaseManager.deleteArena(arenaId).thenAccept(success -> {
+            if (!success) {
+                plugin.getLogger().warning("Arena veritabanından silinemedi: " + arenaId);
+            }
+        });
+        
         return true;
     }
 
@@ -210,7 +297,14 @@ public class ArenaManager {
         }
 
         arena.setName(newName);
-        saveArenas();
+        
+        // Veritabanına kaydet
+        databaseManager.saveArena(arena).thenAccept(success -> {
+            if (!success) {
+                plugin.getLogger().warning("Arena güncellenemedi: " + arenaId);
+            }
+        });
+        
         return true;
     }
 
@@ -228,7 +322,14 @@ public class ArenaManager {
         }
 
         arena.setPos1(location);
-        saveArenas();
+        
+        // Veritabanına kaydet
+        databaseManager.saveArena(arena).thenAccept(success -> {
+            if (!success) {
+                plugin.getLogger().warning("Arena konumu güncellenemedi: " + arenaId);
+            }
+        });
+        
         return true;
     }
 
@@ -246,8 +347,29 @@ public class ArenaManager {
         }
 
         arena.setPos2(location);
-        saveArenas();
+        
+        // Veritabanına kaydet
+        databaseManager.saveArena(arena).thenAccept(success -> {
+            if (!success) {
+                plugin.getLogger().warning("Arena pozisyonu veritabanına kaydedilemedi: " + arenaId);
+            }
+        });
+        
         return true;
+    }
+
+    /**
+     * Bir arenayı veritabanına kaydeder
+     *
+     * @param arena Kaydedilecek arena
+     * @return Kaydetme işleminin başlatıldığını gösteren CompletableFuture
+     */
+    public CompletableFuture<Boolean> saveArena(Arena arena) {
+        // Arenaları güncelle
+        arenas.put(arena.getId(), arena);
+        
+        // Veritabanına kaydet
+        return databaseManager.saveArena(arena);
     }
 
     /**
@@ -322,7 +444,14 @@ public class ArenaManager {
         }
 
         arena.setEnabled(enabled);
-        saveArenas();
+        
+        // Veritabanına kaydet
+        databaseManager.saveArena(arena).thenAccept(success -> {
+            if (!success) {
+                plugin.getLogger().warning("Arena durumu güncellenemedi: " + arenaId);
+            }
+        });
+        
         return true;
     }
 
@@ -372,5 +501,30 @@ public class ArenaManager {
      */
     public Set<String> getArenaIds() {
         return arenas.keySet();
+    }
+    
+    /**
+     * Veritabanı bağlantısını kapatır
+     */
+    public void close() {
+        if (databaseManager != null) {
+            databaseManager.closeConnection();
+        }
+    }
+
+    /**
+     * Arenaları yeniden yükler
+     */
+    public void reload() {
+        // Debug mesajı
+        if (plugin.getConfig().getBoolean("debug", false)) {
+            plugin.getLogger().info("Arena yöneticisi yeniden yükleniyor...");
+        }
+        
+        // Enable durumunu config'den yeniden oku
+        this.enabled = plugin.getConfig().getBoolean("duels.arenas.enabled", false);
+        
+        // Arenaları yeniden yükle
+        loadArenas();
     }
 } 

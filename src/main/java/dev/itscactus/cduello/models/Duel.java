@@ -12,8 +12,8 @@ public class Duel {
     private final UUID id;
     private final UUID challenger;
     private final UUID challenged;
-    private final Location challengerLocation;
-    private final Location challengedLocation;
+    private Location challengerLocation;
+    private Location challengedLocation;
     private DuelState state;
     private UUID winner;
     private double betAmount;
@@ -92,7 +92,16 @@ public class Duel {
      * @return The location of the challenger
      */
     public Location getChallengerLocation() {
-        return challengerLocation;
+        return challengerLocation != null ? challengerLocation.clone() : null;
+    }
+
+    /**
+     * Set the location of the challenger
+     *
+     * @param location The new location of the challenger
+     */
+    public void setChallengerLocation(Location location) {
+        this.challengerLocation = location != null ? location.clone() : null;
     }
 
     /**
@@ -101,7 +110,16 @@ public class Duel {
      * @return The location of the challenged player
      */
     public Location getChallengedLocation() {
-        return challengedLocation;
+        return challengedLocation != null ? challengedLocation.clone() : null;
+    }
+
+    /**
+     * Set the location of the challenged player
+     *
+     * @param location The new location of the challenged player
+     */
+    public void setChallengedLocation(Location location) {
+        this.challengedLocation = location != null ? location.clone() : null;
     }
 
     /**

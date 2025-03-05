@@ -326,10 +326,19 @@ public class DuelManager {
         activeDuels.put(duel.getId(), duel);
         
         // Arena kullanımını kontrol et
-        boolean useArenas = plugin.getConfig().getBoolean("duels.arenas.enabled", false) && 
-                            arenaManager != null && 
-                            arenaManager.isEnabled() && 
-                            !arenaManager.getArenas().isEmpty();
+        boolean useArenas = plugin.getConfig().getBoolean("duels.arenas.enabled", true) && 
+                           arenaManager != null && 
+                           arenaManager.isEnabled() && 
+                           !arenaManager.getArenas().isEmpty();
+        
+        // Debug log
+        if (plugin.getConfig().getBoolean("debug", false)) {
+            plugin.getLogger().info("Arena usage check: " + useArenas + 
+                                    " (config: " + plugin.getConfig().getBoolean("duels.arenas.enabled", true) + 
+                                    ", manager: " + (arenaManager != null) + 
+                                    ", enabled: " + (arenaManager != null && arenaManager.isEnabled()) + 
+                                    ", arenas: " + (arenaManager != null && !arenaManager.getArenas().isEmpty()) + ")");
+        }
         
         Map<String, String> placeholders = null;
         Arena selectedArena = null;
@@ -338,24 +347,86 @@ public class DuelManager {
             // Uygun arenaları filtrele (etkin olanlar)
             List<Arena> availableArenas = arenaManager.getArenas().values().stream()
                     .filter(Arena::isEnabled)
+                    .filter(arena -> arena.getPos1() != null && arena.getPos2() != null)
                     .collect(Collectors.toList());
+            
+            // Debug log
+            if (plugin.getConfig().getBoolean("debug", false)) {
+                plugin.getLogger().info("Available arenas: " + availableArenas.size());
+                for (Arena arena : availableArenas) {
+                    plugin.getLogger().info(" - " + arena.getName() + " (enabled: " + arena.isEnabled() + 
+                                           ", pos1: " + (arena.getPos1() != null) + 
+                                           ", pos2: " + (arena.getPos2() != null) + ")");
+                }
+            }
             
             if (!availableArenas.isEmpty()) {
                 // Rastgele arena seç (çok sayıda arena olduğunda performans için optimizasyon)
                 int randomIndex = ThreadLocalRandom.current().nextInt(availableArenas.size());
                 selectedArena = availableArenas.get(randomIndex);
                 
-                // Oyuncuları arenaya teleport et
-                player1.teleport(selectedArena.getPos1());
-                player2.teleport(selectedArena.getPos2());
+                // Debug log
+                if (plugin.getConfig().getBoolean("debug", false)) {
+                    plugin.getLogger().info("Selected arena: " + selectedArena.getName());
+                }
                 
-                // Arena bilgisini placeholders'a ekle
-                placeholders = new HashMap<>();
-                placeholders.put("arena", selectedArena.getName());
-                
-                // Teleport mesajı gönder
-                messageManager.sendMessage(player1, "teleported-to-arena", placeholders);
-                messageManager.sendMessage(player2, "teleported-to-arena", placeholders);
+                // Arena konumlarının null olmadığından emin ol
+                if (selectedArena.getPos1() != null && selectedArena.getPos2() != null) {
+                    // Oyuncuların hala çevrimiçi olduğundan emin ol
+                    if (player1.isOnline() && player2.isOnline()) {
+                        try {
+                            // Clone and add 0.5 offset to center players on blocks and ensure they're on solid ground
+                            Location pos1 = selectedArena.getPos1().clone().add(0.5, 0.1, 0.5);
+                            Location pos2 = selectedArena.getPos2().clone().add(0.5, 0.1, 0.5);
+                            
+                            // Debug log
+                            if (plugin.getConfig().getBoolean("debug", false)) {
+                                plugin.getLogger().info("Teleporting players to arena:");
+                                plugin.getLogger().info(" - Player1: " + player1.getName() + " to " + 
+                                                      pos1.getWorld().getName() + "," + 
+                                                      pos1.getX() + "," + pos1.getY() + "," + pos1.getZ());
+                                plugin.getLogger().info(" - Player2: " + player2.getName() + " to " + 
+                                                      pos2.getWorld().getName() + "," + 
+                                                      pos2.getX() + "," + pos2.getY() + "," + pos2.getZ());
+                            }
+                            
+                            // First save original locations to return to later
+                            duel.setChallengerLocation(player1Loc);
+                            duel.setChallengedLocation(player2Loc);
+                            
+                            // Then teleport players with a slight delay to ensure the teleport completes
+                            new BukkitRunnable() {
+                                @Override
+                                public void run() {
+                                    if (player1.isOnline()) {
+                                        player1.teleport(pos1);
+                                    }
+                                }
+                            }.runTask(plugin);
+                            
+                            new BukkitRunnable() {
+                                @Override
+                                public void run() {
+                                    if (player2.isOnline()) {
+                                        player2.teleport(pos2);
+                                    }
+                                }
+                            }.runTask(plugin);
+                            
+                            // Arena bilgisini placeholders'a ekle
+                            placeholders = new HashMap<>();
+                            placeholders.put("arena", selectedArena.getName());
+                            
+                            // Teleport mesajı gönder
+                            messageManager.sendMessage(player1, "teleported-to-arena", placeholders);
+                            messageManager.sendMessage(player2, "teleported-to-arena", placeholders);
+                        } catch (Exception e) {
+                            // Log any teleport errors
+                            plugin.getLogger().severe("Error teleporting players to arena: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                }
             }
         }
         
@@ -726,5 +797,40 @@ public class DuelManager {
      */
     public boolean isInDuel(UUID playerUuid) {
         return playersInDuel.contains(playerUuid);
+    }
+
+    /**
+     * Tüm aktif düelloları sonlandırır
+     * 
+     * @param reason Sonlandırma nedeni
+     */
+    public void endAllDuels(String reason) {
+        // Kopyayla çalış ki ConcurrentModificationException oluşmasın
+        List<Duel> duels = new ArrayList<>(activeDuels.values());
+        
+        for (Duel duel : duels) {
+            // Her düelloyu iptal et
+            Player challenger = Bukkit.getPlayer(duel.getChallenger());
+            Player challenged = Bukkit.getPlayer(duel.getChallenged());
+            
+            // Oyunculara mesaj gönder
+            if (challenger != null) {
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("reason", reason);
+                messageManager.sendMessage(challenger, "duel-cancelled-admin", placeholders);
+            }
+            
+            if (challenged != null) {
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("reason", reason);
+                messageManager.sendMessage(challenged, "duel-cancelled-admin", placeholders);
+            }
+            
+            // Düelloyu sonlandır
+            endDuelPrematurely(duel);
+        }
+        
+        // Tüm bekleyen istekleri temizle
+        pendingRequests.clear();
     }
 } 

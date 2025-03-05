@@ -21,10 +21,10 @@ public class EconomyManager {
 
     public EconomyManager(Main plugin) {
         this.plugin = plugin;
-        this.winnerPercentage = plugin.getConfig().getDouble("economy.winner-percentage", 80.0);
-        this.minBetAmount = plugin.getConfig().getDouble("economy.min-bet-amount", 10.0);
-        this.maxBetAmount = plugin.getConfig().getDouble("economy.max-bet-amount", 1000000.0);
-        this.announcementThreshold = plugin.getConfig().getDouble("economy.announcement-threshold", 200000.0);
+        this.winnerPercentage = plugin.getConfig().getDouble("duel.winner-percentage", 100.0);
+        this.minBetAmount = plugin.getConfig().getDouble("duel.min-bet", 0.0);
+        this.maxBetAmount = plugin.getConfig().getDouble("duel.max-bet", 0.0);
+        this.announcementThreshold = plugin.getConfig().getDouble("duel.announcement-threshold", 10000.0);
         setupEconomy();
     }
 

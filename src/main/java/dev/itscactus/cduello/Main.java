@@ -1,143 +1,124 @@
 package dev.itscactus.cduello;
 
+import dev.itscactus.cduello.commands.DuelAdminCommand;
 import dev.itscactus.cduello.commands.DuelloCommand;
 import dev.itscactus.cduello.listeners.DuelListener;
+import dev.itscactus.cduello.listeners.LeaderboardListener;
 import dev.itscactus.cduello.managers.ArenaManager;
 import dev.itscactus.cduello.managers.DuelManager;
 import dev.itscactus.cduello.managers.EconomyManager;
+import dev.itscactus.cduello.managers.StatsManager;
+import dev.itscactus.cduello.placeholders.DuelloPlaceholders;
+import dev.itscactus.cduello.utils.DatabaseManager;
 import dev.itscactus.cduello.utils.MessageManager;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.TabCompleter;
-import org.bukkit.event.Listener;
 
 public class Main extends JavaPlugin {
 
-    private static Main instance;
-    private DuelManager duelManager;
-    private EconomyManager economyManager;
-    private ArenaManager arenaManager;
+    private DatabaseManager databaseManager;
     private MessageManager messageManager;
+    private ArenaManager arenaManager;
+    private DuelManager duelManager;
+    private StatsManager statsManager;
+    private EconomyManager economyManager;
 
     @Override
     public void onEnable() {
-        instance = this;
-        
-        // Save default config
+        // Config dosyasını yükle
         saveDefaultConfig();
         
-        // Initialize utils
+        // Veritabanı yapılandırmasını kontrol et
+        if (!getConfig().contains("database.migration-completed")) {
+            getConfig().set("database.migration-completed", false);
+            saveConfig();
+        }
+        
+        // Veritabanı yöneticisini başlat
+        databaseManager = new DatabaseManager(this);
+        
+        // Mesaj yöneticisini başlat
         messageManager = new MessageManager(this);
         
-        // Initialize managers
+        // Ekonomi yöneticisini başlat
         economyManager = new EconomyManager(this);
+        
+        // Arena yöneticisini başlat
         arenaManager = new ArenaManager(this);
+        
+        // İstatistik yöneticisini başlat
+        statsManager = new StatsManager(this, databaseManager);
+        
+        // Düello yöneticisini başlat
         duelManager = new DuelManager(this, economyManager);
         
-        // Set arena manager for duel manager
+        // Arena yöneticisini düello yöneticisine ayarla
         duelManager.setArenaManager(arenaManager);
         
-        // Register commands
-        registerCommands();
+        // Komutları kaydet
+        getCommand("duello").setExecutor(new DuelloCommand(this, duelManager));
+        getCommand("dueladmin").setExecutor(new DuelAdminCommand(this, arenaManager));
         
-        // Register events
-        registerEvents();
+        // Dinleyicileri kaydet
+        PluginManager pluginManager = getServer().getPluginManager();
+        DuelListener duelListener = new DuelListener(this, duelManager);
+        pluginManager.registerEvents(duelListener, this);
+        pluginManager.registerEvents(new LeaderboardListener(this, databaseManager), this);
         
-        getLogger().info("cDuello plugin has been enabled!");
+        // DuelListener'ı DuelManager'a ayarla
+        duelManager.setDuelListener(duelListener);
+        
+        // PlaceholderAPI entegrasyonu
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new DuelloPlaceholders(this, statsManager, databaseManager).register();
+            getLogger().info("PlaceholderAPI entegrasyonu aktif edildi!");
+        }
+        
+        getLogger().info("cDuello plugin aktivated");
     }
 
     @Override
     public void onDisable() {
-        // Adventure API kaynaklarını serbest bırak
-        if (messageManager != null) {
-            messageManager.close();
+        // Aktif düelloları iptal et
+        if (duelManager != null) {
+            duelManager.endAllDuels("Plugin devre dışı bırakıldı");
         }
         
-        getLogger().info("cDuello plugin has been disabled!");
-    }
-    
-    private void registerCommands() {
-        DuelloCommand duelloCommand = new DuelloCommand(this, duelManager);
-        registerCommand("duello", duelloCommand, duelloCommand);
-    }
-    
-    private void registerEvents() {
-        // DuelListener'ı oluştur
-        DuelListener duelListener = new DuelListener(this, duelManager);
-        
-        // DuelManager ve DuelListener arasında bağlantı kur
-        duelManager.setDuelListener(duelListener);
-        
-        // Event'leri kaydet
-        registerListener(duelListener);
-    }
-    
-    /**
-     * Registers a command with optional tab completer
-     * 
-     * @param name The command name
-     * @param executor The command executor
-     * @param completer The tab completer (can be null)
-     */
-    private void registerCommand(String name, CommandExecutor executor, TabCompleter completer) {
-        getCommand(name).setExecutor(executor);
-        if (completer != null) {
-            getCommand(name).setTabCompleter(completer);
+        // İstatistikleri kaydet
+        if (statsManager != null) {
+            statsManager.shutdown();
         }
+        
+        // Veritabanı bağlantısını kapat
+        if (databaseManager != null) {
+            databaseManager.closeConnection();
+        }
+        
+        getLogger().info("cDuello plugin deaktif edildi!");
     }
-    
-    /**
-     * Registers an event listener
-     * 
-     * @param listener The listener to register
-     */
-    private void registerListener(Listener listener) {
-        Bukkit.getPluginManager().registerEvents(listener, this);
+
+    public MessageManager getMessageManager() {
+        return messageManager;
     }
-    
-    /**
-     * Gets the instance of the plugin
-     * 
-     * @return The plugin instance
-     */
-    public static Main getInstance() {
-        return instance;
+
+    public ArenaManager getArenaManager() {
+        return arenaManager;
     }
-    
-    /**
-     * Gets the duel manager
-     * 
-     * @return The duel manager
-     */
+
     public DuelManager getDuelManager() {
         return duelManager;
     }
     
-    /**
-     * Gets the economy manager
-     * 
-     * @return The economy manager
-     */
+    public StatsManager getStatsManager() {
+        return statsManager;
+    }
+    
+    public DatabaseManager getDatabaseManager() {
+        return databaseManager;
+    }
+    
     public EconomyManager getEconomyManager() {
         return economyManager;
-    }
-    
-    /**
-     * Gets the arena manager
-     * 
-     * @return The arena manager
-     */
-    public ArenaManager getArenaManager() {
-        return arenaManager;
-    }
-    
-    /**
-     * Gets the message manager
-     * 
-     * @return The message manager
-     */
-    public MessageManager getMessageManager() {
-        return messageManager;
     }
 } 
