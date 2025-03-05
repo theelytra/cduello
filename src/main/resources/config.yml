@@ -24,6 +24,7 @@ messages:
   sender-offline: "<red>Düello isteğini gönderen oyuncu artık çevrimiçi değil."
   duel-countdown: "<yellow>Düello <red>%seconds% <yellow>saniye içinde başlıyor!"
   duel-countdown-money: "<yellow>Düello <gold>%amount% <yellow>ödül için <red>%seconds% <yellow>saniye içinde başlıyor!"
+  duel-countdown-freeze: "<red>Geri sayım sırasında hareket edemezsiniz!"
   duel-started: "<yellow>Düello başladı! İyi şanslar!"
   duel-started-money: "<yellow>Düello <gold>%amount% <yellow>ödül için başladı! İyi şanslar!"
   duel-won: "<green>Düelloyu kazandın!"
@@ -59,6 +60,37 @@ messages:
   help-duel-stats: "<yellow>/duel stats [player] <gray>- Düello istatistiklerini görüntüle"
   help-duel-reload: "<yellow>/duel reload <gray>- Eklenti yapılandırmasını yeniden yükle"
   help-footer: "<dark_gray><strikethrough>-----------------------------------------------"
+  
+  # Arena mesajları
+  arena-list-header: "<gold>====== <yellow>Arena Listesi <gold>======"
+  arena-list-empty: "<yellow>Hiç arena bulunamadı."
+  arena-list-item: "<yellow>{id}: <gold>{name} <gray>({world}) - <green>{status}"
+  arena-list-footer: "<gold>============================="
+  arena-info-header: "<gold>====== <yellow>Arena: {name} <gold>======"
+  arena-info-pos: "<yellow>Dünya: <gold>{world} <yellow>| Konum 1: <gold>{pos1} <yellow>| Konum 2: <gold>{pos2}"
+  arena-info-status: "<yellow>Durum: <gold>{status}"
+  arena-info-footer: "<gold>============================="
+  arena-created: "<green>Arena başarıyla oluşturuldu: <gold>{name} <green>(ID: <gold>{id}<green>)"
+  arena-deleted: "<green>Arena başarıyla silindi: <gold>{name} <green>(ID: <gold>{id}<green>)"
+  arena-renamed: "<green>Arena adı değiştirildi: <gold>{old_name} <green>-> <gold>{new_name}"
+  arena-pos1-set: "<green>Arena <gold>{name} <green>için 1. konum ayarlandı."
+  arena-pos2-set: "<green>Arena <gold>{name} <green>için 2. konum ayarlandı."
+  arena-enabled: "<green>Arena <gold>{name} <green>etkinleştirildi."
+  arena-disabled: "<green>Arena <gold>{name} <green>devre dışı bırakıldı."
+  arena-system-enabled: "<green>Arena sistemi etkinleştirildi."
+  arena-system-disabled: "<green>Arena sistemi devre dışı bırakıldı."
+  arena-not-found: "<red>Arena bulunamadı: <gold>{arena}"
+  arena-already-exists: "<red>Bu ID ile bir arena zaten var: <gold>{arena}"
+  arena-create-failed: "<red>Arena oluşturulamadı! Lütfen tekrar deneyin."
+  arena-delete-failed: "<red>Arena silinemedi! Lütfen tekrar deneyin."
+  arena-rename-failed: "<red>Arena adı değiştirilemedi! Lütfen tekrar deneyin."
+  arena-pos1-set-failed: "<red>Arena 1. konumu ayarlanamadı! Lütfen tekrar deneyin."
+  arena-pos2-set-failed: "<red>Arena 2. konumu ayarlanamadı! Lütfen tekrar deneyin."
+  arena-enable-failed: "<red>Arena etkinleştirilemedi! Lütfen tekrar deneyin."
+  arena-disable-failed: "<red>Arena devre dışı bırakılamadı! Lütfen tekrar deneyin."
+  
+  # Arena teleportasyon mesajları
+  teleported-to-arena: "<green>Arena <gold>{arena}<green>'ya ışınlandınız. Düello başlıyor!"
 
 # Düello yapılandırması
 duels:

@@ -4,15 +4,21 @@ import dev.itscactus.cduello.Main;
 import dev.itscactus.cduello.models.Duel;
 import dev.itscactus.cduello.models.DuelRequest;
 import dev.itscactus.cduello.models.PlayerStats;
+import dev.itscactus.cduello.models.Arena;
 import dev.itscactus.cduello.utils.MessageManager;
 import dev.itscactus.cduello.utils.MessageUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.Location;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.concurrent.ThreadLocalRandom;
+
+import dev.itscactus.cduello.listeners.DuelListener;
 
 public class DuelManager {
 
@@ -23,11 +29,32 @@ public class DuelManager {
     private final Map<UUID, Duel> activeDuels = new ConcurrentHashMap<>();
     private final Map<UUID, PlayerStats> playerStats = new ConcurrentHashMap<>();
     private final Set<UUID> playersInDuel = new HashSet<>();
+    private final Set<UUID> playersInCountdown = new HashSet<>();
+    private ArenaManager arenaManager;
+    private DuelListener duelListener;
 
     public DuelManager(Main plugin, EconomyManager economyManager) {
         this.plugin = plugin;
         this.economyManager = economyManager;
         this.messageManager = plugin.getMessageManager();
+    }
+
+    /**
+     * ArenaManager'ı ayarlar
+     * 
+     * @param arenaManager Arena yöneticisi
+     */
+    public void setArenaManager(ArenaManager arenaManager) {
+        this.arenaManager = arenaManager;
+    }
+
+    /**
+     * DuelListener'ı ayarlar (optimize edilmiş countdown takibi için)
+     *
+     * @param duelListener Listener instance
+     */
+    public void setDuelListener(DuelListener duelListener) {
+        this.duelListener = duelListener;
     }
 
     /**
@@ -270,117 +297,143 @@ public class DuelManager {
     }
 
     /**
-     * Normal bir düello başlatır
-     *
-     * @param player1 Birinci oyuncu
-     * @param player2 İkinci oyuncu
+     * İki oyuncu arasında düello başlatır (para ödülü olmadan)
      */
     private void startDuel(Player player1, Player player2) {
-        startDuel(player1, player2, 0);
+        startDuel(player1, player2, 0.0);
     }
 
     /**
-     * Para ödüllü bir düello başlatır
-     *
-     * @param player1 Birinci oyuncu
-     * @param player2 İkinci oyuncu
-     * @param betAmount Bahis miktarı
+     * İki oyuncu arasında düello başlatır (belirlenen para ödülü ile)
+     * Bu metot performans için optimize edilmiştir
      */
     private void startDuel(Player player1, Player player2, double betAmount) {
-        // Ön geri sayım işlemi
-        int countdown = plugin.getConfig().getInt("duels.countdown", 5);
-
-        // Para düellosu için parayı çek
-        if (betAmount > 0) {
-            if (!economyManager.withdrawMoney(player1, betAmount)) {
-                Map<String, String> placeholders = new HashMap<>();
-                placeholders.put("amount", economyManager.formatMoney(betAmount));
-                messageManager.sendMessage(player1, "insufficient-funds", placeholders);
-                return;
-            }
-
-            if (!economyManager.withdrawMoney(player2, betAmount)) {
-                // İlk oyuncunun parasını iade et
-                economyManager.depositMoney(player1, betAmount);
-                
-                Map<String, String> placeholders = new HashMap<>();
-                placeholders.put("amount", economyManager.formatMoney(betAmount));
-                messageManager.sendMessage(player2, "insufficient-funds", placeholders);
-                return;
-            }
-        }
-
-        // Oyuncuları düelloda olarak işaretle
-        playersInDuel.add(player1.getUniqueId());
-        playersInDuel.add(player2.getUniqueId());
-
-        // Düello nesnesini oluştur
-        UUID duelId = UUID.randomUUID();
-        Duel duel = new Duel(duelId, player1, player2);
+        // Oyuncuların lokasyonlarını sakla
+        Location player1Loc = player1.getLocation().clone();
+        Location player2Loc = player2.getLocation().clone();
         
-        if (betAmount > 0) {
-            duel.setBetAmount(betAmount);
-        }
-
-        // Aktif düellolar listesine ekle
-        activeDuels.put(duelId, duel);
-
-        // Yüksek değerli düello duyurusu
-        if (duel.isMoneyDuel() && economyManager.shouldAnnounce(duel.getTotalPot())) {
-            Map<String, String> announcePlaceholders = new HashMap<>();
-            announcePlaceholders.put("player1", player1.getName());
-            announcePlaceholders.put("player2", player2.getName());
-            announcePlaceholders.put("amount", economyManager.formatMoney(duel.getTotalPot()));
+        // Oyuncuları düelloda işaretle
+        UUID player1Uuid = player1.getUniqueId();
+        UUID player2Uuid = player2.getUniqueId();
+        
+        playersInDuel.add(player1Uuid);
+        playersInDuel.add(player2Uuid);
+        
+        // Düello oluştur
+        Duel duel = new Duel(player1, player2, player1Loc, player2Loc, betAmount);
+        
+        // Düelloyu aktif düellolar listesine ekle
+        activeDuels.put(duel.getId(), duel);
+        
+        // Arena kullanımını kontrol et
+        boolean useArenas = plugin.getConfig().getBoolean("duels.arenas.enabled", false) && 
+                            arenaManager != null && 
+                            arenaManager.isEnabled() && 
+                            !arenaManager.getArenas().isEmpty();
+        
+        Map<String, String> placeholders = null;
+        Arena selectedArena = null;
+        
+        if (useArenas) {
+            // Uygun arenaları filtrele (etkin olanlar)
+            List<Arena> availableArenas = arenaManager.getArenas().values().stream()
+                    .filter(Arena::isEnabled)
+                    .collect(Collectors.toList());
             
-            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-                messageManager.sendMessage(onlinePlayer, "high-value-duel-announcement", announcePlaceholders);
+            if (!availableArenas.isEmpty()) {
+                // Rastgele arena seç (çok sayıda arena olduğunda performans için optimizasyon)
+                int randomIndex = ThreadLocalRandom.current().nextInt(availableArenas.size());
+                selectedArena = availableArenas.get(randomIndex);
+                
+                // Oyuncuları arenaya teleport et
+                player1.teleport(selectedArena.getPos1());
+                player2.teleport(selectedArena.getPos2());
+                
+                // Arena bilgisini placeholders'a ekle
+                placeholders = new HashMap<>();
+                placeholders.put("arena", selectedArena.getName());
+                
+                // Teleport mesajı gönder
+                messageManager.sendMessage(player1, "teleported-to-arena", placeholders);
+                messageManager.sendMessage(player2, "teleported-to-arena", placeholders);
             }
         }
-
+        
+        // Oyuncuları geri sayıma ekle
+        addPlayersToCountdown(player1, player2);
+        
+        // Geri sayımı başlat
+        int countdown = plugin.getConfig().getInt("duels.countdown", 5);
+        
         // Geri sayım görevi
         new BukkitRunnable() {
             int secondsLeft = countdown;
-
+            
             @Override
             public void run() {
-                // Oyuncuların hala çevrimiçi olup olmadığını kontrol et
+                // Oyunculardan biri çevrimiçi değilse, düelloyu iptal et
                 if (!player1.isOnline() || !player2.isOnline()) {
-                    cancel();
                     endDuelPrematurely(duel);
+                    cancel();
                     return;
                 }
-
-                // Geri sayım mesajlarını gönder
-                if (secondsLeft > 0) {
-                    Map<String, String> countdownPlaceholders = new HashMap<>();
-                    countdownPlaceholders.put("seconds", String.valueOf(secondsLeft));
+                
+                // Geri sayım tamamlandı, düelloyu başlat
+                if (secondsLeft <= 0) {
+                    // Düello durumunu güncelle
+                    duel.setState(Duel.DuelState.ACTIVE);
                     
-                    if (duel.isMoneyDuel()) {
-                        countdownPlaceholders.put("amount", economyManager.formatMoney(duel.getBetAmount()));
-                        messageManager.sendMessage(player1, "duel-countdown-money", countdownPlaceholders);
-                        messageManager.sendMessage(player2, "duel-countdown-money", countdownPlaceholders);
+                    // Oyuncuları hareketsiz moddan çıkar
+                    removePlayersFromCountdown(player1, player2);
+                    
+                    // Düello başlangıç mesajını gönder
+                    if (betAmount > 0) {
+                        // Para ödüllü düello
+                        Map<String, String> msgPlaceholders = new HashMap<>();
+                        msgPlaceholders.put("amount", economyManager.formatMoney(betAmount));
+                        
+                        messageManager.sendMessage(player1, "duel-started-money", msgPlaceholders);
+                        messageManager.sendMessage(player2, "duel-started-money", msgPlaceholders);
+                        
+                        // Yüksek değerli düello ise duyuru yap
+                        double announcementThreshold = plugin.getConfig().getDouble("economy.announcement-threshold", 200000.0);
+                        
+                        if (betAmount * 2 >= announcementThreshold) {
+                            Map<String, String> announcePlaceholders = new HashMap<>();
+                            announcePlaceholders.put("player1", player1.getName());
+                            announcePlaceholders.put("player2", player2.getName());
+                            announcePlaceholders.put("amount", economyManager.formatMoney(betAmount * 2));
+                            
+                            // Sunucudaki herkese duyur
+                            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                                messageManager.sendMessage(onlinePlayer, "high-value-duel-announcement", announcePlaceholders);
+                            }
+                        }
                     } else {
-                        messageManager.sendMessage(player1, "duel-countdown", countdownPlaceholders);
-                        messageManager.sendMessage(player2, "duel-countdown", countdownPlaceholders);
-                    }
-                    
-                    secondsLeft--;
-                } else {
-                    cancel();
-                    
-                    // Başlangıç mesajlarını gönder
-                    if (duel.isMoneyDuel()) {
-                        Map<String, String> startPlaceholders = new HashMap<>();
-                        startPlaceholders.put("amount", economyManager.formatMoney(duel.getBetAmount()));
-                        messageManager.sendMessage(player1, "duel-started-money", startPlaceholders);
-                        messageManager.sendMessage(player2, "duel-started-money", startPlaceholders);
-                    } else {
+                        // Normal düello
                         messageManager.sendMessage(player1, "duel-started");
                         messageManager.sendMessage(player2, "duel-started");
                     }
                     
-                    // Düello durumunu güncelle
-                    duel.setState(Duel.DuelState.ACTIVE);
+                    cancel();
+                } else {
+                    // Geri sayım mesajını gönder
+                    Map<String, String> countPlaceholders = new HashMap<>();
+                    countPlaceholders.put("seconds", String.valueOf(secondsLeft));
+                    
+                    if (betAmount > 0) {
+                        // Para ödüllü düello
+                        countPlaceholders.put("amount", economyManager.formatMoney(betAmount));
+                        
+                        messageManager.sendMessage(player1, "duel-countdown-money", countPlaceholders);
+                        messageManager.sendMessage(player2, "duel-countdown-money", countPlaceholders);
+                    } else {
+                        // Normal düello
+                        messageManager.sendMessage(player1, "duel-countdown", countPlaceholders);
+                        messageManager.sendMessage(player2, "duel-countdown", countPlaceholders);
+                    }
+                    
+                    secondsLeft--;
                 }
             }
         }.runTaskTimer(plugin, 0L, 20L);
@@ -509,6 +562,11 @@ public class DuelManager {
 
         // Aktif düellolar listesinden kaldır
         activeDuels.remove(duel.getId());
+
+        // Düellodan sonra playersInCountdown'u güncelle
+        if (duelListener != null) {
+            duelListener.updateCountdownPlayers(playersInCountdown);
+        }
     }
 
     /**
@@ -533,6 +591,50 @@ public class DuelManager {
 
         // Aktif düellolar listesinden kaldır
         activeDuels.remove(duel.getId());
+    }
+
+    /**
+     * Bir oyuncunun sayım sürecinde olup olmadığını kontrol eder
+     *
+     * @param playerUuid Kontrol edilecek oyuncunun UUID'si
+     * @return Oyuncu sayım sürecindeyse true, değilse false
+     */
+    public boolean isInCountdown(UUID playerUuid) {
+        return playersInCountdown.contains(playerUuid);
+    }
+
+    /**
+     * Oyuncuları geri sayım durumuna ekler
+     *
+     * @param player1 Birinci oyuncu
+     * @param player2 İkinci oyuncu
+     */
+    private void addPlayersToCountdown(Player player1, Player player2) {
+        // Eski metodu koruyalım
+        playersInCountdown.add(player1.getUniqueId());
+        playersInCountdown.add(player2.getUniqueId());
+        
+        // Optimize edilmiş versiyonu da güncelleyelim
+        if (duelListener != null) {
+            duelListener.updateCountdownPlayers(playersInCountdown);
+        }
+    }
+
+    /**
+     * Oyuncuları geri sayım durumundan çıkarır
+     *
+     * @param player1 Birinci oyuncu
+     * @param player2 İkinci oyuncu
+     */
+    private void removePlayersFromCountdown(Player player1, Player player2) {
+        // Eski metodu koruyalım
+        playersInCountdown.remove(player1.getUniqueId());
+        playersInCountdown.remove(player2.getUniqueId());
+        
+        // Optimize edilmiş versiyonu da güncelleyelim
+        if (duelListener != null) {
+            duelListener.updateCountdownPlayers(playersInCountdown);
+        }
     }
 
     /**

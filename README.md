@@ -1,103 +1,103 @@
 # cDuello
 
-A simple yet powerful dueling plugin for Minecraft servers running Paper 1.21.4.
+Minecraft sunucuları için Paper 1.21.4 üzerinde çalışan basit ama güçlü bir düello eklentisi.
 
-## Features
+## Özellikler
 
-- Challenge other players to duels
-- Automatic duel management with timeouts
-- Configurable duel settings (keep inventory, heal after duel, etc.)
-- Statistics tracking (wins, losses, win ratio)
-- Customizable messages
-- Permission-based access control
+- Diğer oyunculara düello daveti gönderme
+- Zaman aşımı ile otomatik düello yönetimi
+- Özelleştirilebilir düello ayarları (envanteri koruma, düello sonrası iyileştirme vb.)
+- İstatistik takibi (galibiyetler, mağlubiyetler, galibiyet oranı)
+- Özelleştirilebilir mesajlar
+- İzin tabanlı erişim kontrolü
 
-## Installation
+## Kurulum
 
-1. Download the latest version of the plugin from the releases section.
-2. Place the JAR file in your server's `plugins` directory.
-3. Restart your server.
-4. Configure the plugin by editing the `config.yml` file in the `plugins/cDuello` directory.
+1. Eklentinin en son sürümünü sürümler bölümünden indirin.
+2. JAR dosyasını sunucunuzun `plugins` dizinine yerleştirin.
+3. Sunucunuzu yeniden başlatın.
+4. `plugins/cDuello` dizinindeki `config.yml` dosyasını düzenleyerek eklentiyi yapılandırın.
 
-## Commands
+## Komutlar
 
-- `/duel <player>` - Send a duel request to a player
-- `/duel accept` - Accept a pending duel request
-- `/duel deny` - Deny a pending duel request
-- `/duel stats [player]` - View your or another player's duel stats
-- `/duel reload` - Reload the plugin configuration (requires permission: `cduello.admin`)
+- `/duel <oyuncu>` - Bir oyuncuya düello daveti gönder
+- `/duel accept` - Bekleyen bir düello davetini kabul et
+- `/duel deny` - Bekleyen bir düello davetini reddet
+- `/duel stats [oyuncu]` - Kendi veya başka bir oyuncunun düello istatistiklerini görüntüle
+- `/duel reload` - Eklenti yapılandırmasını yeniden yükle (izin gerektirir: `cduello.admin`)
 
-## Permissions
+## İzinler
 
-- `cduello.use` - Allows the player to use dueling functionality (default: true)
-- `cduello.admin` - Allows the player to use administrative commands (default: op)
+- `cduello.use` - Oyuncunun düello işlevselliğini kullanmasına izin verir (varsayılan: true)
+- `cduello.admin` - Oyuncunun yönetici komutlarını kullanmasına izin verir (varsayılan: op)
 
-## Configuration
+## Yapılandırma
 
-The plugin is highly configurable through the `config.yml` file. Here are some key configuration options:
+Eklenti, `config.yml` dosyası aracılığıyla oldukça özelleştirilebilir. İşte bazı önemli yapılandırma seçenekleri:
 
-- `duels.request-timeout` - Time in seconds before a duel request expires
-- `duels.countdown` - Time in seconds for countdown before duel starts
-- `duels.teleport-back` - Whether to teleport players back to their original location after a duel
-- `duels.heal-after-duel` - Whether to heal players after a duel
-- `duels.clear-effects` - Whether to clear effects after a duel
-- `duels.keep-inventory` - Whether to keep inventory during a duel
-- `duels.allowed-commands` - List of commands allowed during a duel
+- `duels.request-timeout` - Bir düello davetinin süresi dolmadan önceki süre (saniye cinsinden)
+- `duels.countdown` - Düello başlamadan önceki geri sayım süresi (saniye cinsinden)
+- `duels.teleport-back` - Düello sonrası oyuncuları orijinal konumlarına geri ışınlayıp ışınlamama
+- `duels.heal-after-duel` - Düello sonrası oyuncuları iyileştirip iyileştirmeme
+- `duels.clear-effects` - Düello sonrası efektleri temizleyip temizlememe
+- `duels.keep-inventory` - Düello sırasında envanteri koruyup korumama
+- `duels.allowed-commands` - Düello sırasında izin verilen komutlar listesi
 
-## Setup Instructions
+## Kurulum Talimatları
 
 ### IntelliJ IDEA
-1. Open IntelliJ IDEA
-2. Select "Open" and navigate to the project folder
-3. IntelliJ should automatically recognize this as a Maven project
-4. If not, right-click on the `pom.xml` file and select "Add as Maven Project"
-5. Wait for Maven to download all dependencies
-6. If you still see import errors, go to File > Invalidate Caches / Restart
+1. IntelliJ IDEA'yı açın
+2. "Open" seçeneğini seçin ve proje klasörüne gidin
+3. IntelliJ, bunu otomatik olarak bir Maven projesi olarak tanımalıdır
+4. Değilse, `pom.xml` dosyasına sağ tıklayın ve "Add as Maven Project" seçeneğini seçin
+5. Maven'in tüm bağımlılıkları indirmesini bekleyin
+6. Hala içe aktarma hataları görüyorsanız, Dosya > Önbellekleri Temizle / Yeniden Başlat'a gidin
 
 ### Eclipse
-1. Open Eclipse
-2. Select File > Import > Maven > Existing Maven Projects
-3. Navigate to the project folder and select it
-4. Eclipse should automatically recognize the project structure
-5. If you still see import errors, right-click on the project > Maven > Update Project
+1. Eclipse'i açın
+2. Dosya > İçe Aktar > Maven > Mevcut Maven Projeleri'ni seçin
+3. Proje klasörüne gidin ve seçin
+4. Eclipse, proje yapısını otomatik olarak tanımalıdır
+5. Hala içe aktarma hataları görüyorsanız, projeye sağ tıklayın > Maven > Projeyi Güncelle
 
 ### VS Code
-1. Open VS Code
-2. Open the project folder
-3. Install the "Extension Pack for Java" and "Maven for Java" extensions if not already installed
-4. VS Code should automatically recognize the project as a Maven project
-5. If you still see import errors, open the Command Palette (Ctrl+Shift+P), type "Java: Clean Java Language Server Workspace", and select "Restart"
+1. VS Code'u açın
+2. Proje klasörünü açın
+3. "Java için Uzantı Paketi" ve "Java için Maven" uzantılarını yükleyin (eğer yüklü değilse)
+4. VS Code, projeyi otomatik olarak bir Maven projesi olarak tanımalıdır
+5. Hala içe aktarma hataları görüyorsanız, Komut Paleti'ni açın (Ctrl+Shift+P), "Java: Java Dil Sunucusu Çalışma Alanını Temizle" yazın ve "Yeniden Başlat" seçeneğini seçin
 
-### Manual Setup (if IDE integration fails)
-1. Make sure you have Maven installed
-2. Open a terminal in the project directory
-3. Run `mvn clean install`
-4. Add the Paper API jar file (located in `libs/paper-api-1.21.4-R0.1-SNAPSHOT.jar`) to your project's classpath manually
+### Manuel Kurulum (IDE entegrasyonu başarısız olursa)
+1. Maven'in yüklü olduğundan emin olun
+2. Proje dizininde bir terminal açın
+3. `mvn clean install` komutunu çalıştırın
+4. Paper API jar dosyasını (libs/paper-api-1.21.4-R0.1-SNAPSHOT.jar konumunda) projenizin classpath'ine manuel olarak ekleyin
 
-## Building
+## Derleme
 
-To build the plugin from source:
+Kaynak koddan eklentiyi derlemek için:
 
-1. Clone the repository
-2. Run `mvn clean package`
-3. The compiled JAR file will be in the `target` directory
+1. Depoyu klonlayın
+2. `mvn clean package` komutunu çalıştırın
+3. Derlenmiş JAR dosyası `target` dizininde olacaktır
 
-## Requirements
+## Gereksinimler
 
 - Paper 1.21.4
-- Java 8 or higher
+- Java 8 veya üstü
 
-## License
+## Lisans
 
-This project is licensed under the [MIT License](LICENSE).
+Bu proje [MIT Lisansı](LICENSE) altında lisanslanmıştır.
 
-## Support
+## Destek
 
-If you encounter any bugs or have any suggestions, please create an issue on the [GitHub repository](https://github.com/ItsCactus/cDuello).
+Herhangi bir hata ile karşılaşırsanız veya önerileriniz varsa, lütfen [GitHub deposunda](https://github.com/theelytra/cDuello) bir sorun oluşturun.
 
-## Credits
+## Katkılar
 
-- Created by ItsCactus 
+- itscactusdev tarafından oluşturulmuştur
 
-## Dependencies
+## Bağımlılıklar
 - Java 21
 - Paper API 1.21.4-R0.1-SNAPSHOT 

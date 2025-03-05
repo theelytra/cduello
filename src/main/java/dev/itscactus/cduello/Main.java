@@ -2,7 +2,7 @@ package dev.itscactus.cduello;
 
 import dev.itscactus.cduello.commands.DuelloCommand;
 import dev.itscactus.cduello.listeners.DuelListener;
-import dev.itscactus.cduello.listeners.PlayerListener;
+import dev.itscactus.cduello.managers.ArenaManager;
 import dev.itscactus.cduello.managers.DuelManager;
 import dev.itscactus.cduello.managers.EconomyManager;
 import dev.itscactus.cduello.utils.MessageManager;
@@ -17,6 +17,7 @@ public class Main extends JavaPlugin {
     private static Main instance;
     private DuelManager duelManager;
     private EconomyManager economyManager;
+    private ArenaManager arenaManager;
     private MessageManager messageManager;
 
     @Override
@@ -31,7 +32,11 @@ public class Main extends JavaPlugin {
         
         // Initialize managers
         economyManager = new EconomyManager(this);
+        arenaManager = new ArenaManager(this);
         duelManager = new DuelManager(this, economyManager);
+        
+        // Set arena manager for duel manager
+        duelManager.setArenaManager(arenaManager);
         
         // Register commands
         registerCommands();
@@ -58,8 +63,14 @@ public class Main extends JavaPlugin {
     }
     
     private void registerEvents() {
-        registerListener(new DuelListener(this, duelManager));
-        registerListener(new PlayerListener(this, duelManager));
+        // DuelListener'ı oluştur
+        DuelListener duelListener = new DuelListener(this, duelManager);
+        
+        // DuelManager ve DuelListener arasında bağlantı kur
+        duelManager.setDuelListener(duelListener);
+        
+        // Event'leri kaydet
+        registerListener(duelListener);
     }
     
     /**
@@ -77,7 +88,7 @@ public class Main extends JavaPlugin {
     }
     
     /**
-     * Registers a listener
+     * Registers an event listener
      * 
      * @param listener The listener to register
      */
@@ -86,9 +97,9 @@ public class Main extends JavaPlugin {
     }
     
     /**
-     * Gets the instance of the main plugin class
+     * Gets the instance of the plugin
      * 
-     * @return The main plugin instance
+     * @return The plugin instance
      */
     public static Main getInstance() {
         return instance;
@@ -110,6 +121,15 @@ public class Main extends JavaPlugin {
      */
     public EconomyManager getEconomyManager() {
         return economyManager;
+    }
+    
+    /**
+     * Gets the arena manager
+     * 
+     * @return The arena manager
+     */
+    public ArenaManager getArenaManager() {
+        return arenaManager;
     }
     
     /**

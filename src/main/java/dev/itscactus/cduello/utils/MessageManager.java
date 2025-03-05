@@ -9,12 +9,26 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class MessageManager {
     private final Main plugin;
     private final FileConfiguration config;
     private final MiniMessage miniMessage;
     private final BukkitAudiences adventure;
+
+    // Mesaj önbelleği (sık kullanılan mesajlar için)
+    private final Map<String, Component> messageCache = new ConcurrentHashMap<>();
+    
+    // Prefix önbelleği
+    private Component cachedPrefix = null;
+    
+    // Önbellek geçerlilik süresi (milisaniye)
+    private static final long CACHE_EXPIRY_MS = 60000; // 1 dakika
+    
+    // Son önbellek temizleme zamanı
+    private long lastCacheClear = System.currentTimeMillis();
 
     public MessageManager(Main plugin) {
         this.plugin = plugin;
@@ -24,32 +38,115 @@ public class MessageManager {
     }
 
     /**
-     * Yapılandırma dosyasından mesaj alır ve MiniMessage ile formatlar
+     * Verilen mesajı config dosyasından alır ve formatlar.
+     * Performans için önbellek kullanır.
      *
-     * @param path Mesajın yapılandırma dosyasındaki yolu
+     * @param key Mesaj keyi
      * @return Formatlanmış mesaj
      */
-    public Component getMessage(String path) {
-        String message = config.getString("messages." + path, "Mesaj bulunamadı: " + path);
-        return miniMessage.deserialize(convertLegacyToMiniMessage(message));
+    public Component getMessage(String key) {
+        // Cache'ten kontrol et
+        String cacheKey = "msg:" + key;
+        Component cachedMessage = messageCache.get(cacheKey);
+        
+        if (cachedMessage != null) {
+            return cachedMessage;
+        }
+        
+        // Cache'te yoksa, yeni mesajı oluştur
+        String rawMessage = config.getString("messages." + key);
+        
+        if (rawMessage == null || rawMessage.isEmpty()) {
+            return Component.empty();
+        }
+        
+        Component formattedMessage = miniMessage.deserialize(rawMessage);
+        
+        // Cache'e kaydet
+        messageCache.put(cacheKey, formattedMessage);
+        checkCacheExpiry();
+        
+        return formattedMessage;
     }
 
     /**
-     * Yapılandırma dosyasından mesaj alır, yer tutucuları değiştirir ve MiniMessage ile formatlar
+     * Verilen mesajı config dosyasından alır, yer tutucuları değiştirir ve formatlar.
+     * Performans için önbellek kullanır.
      *
-     * @param path Mesajın yapılandırma dosyasındaki yolu
-     * @param placeholders Yer tutucu -> değer eşleşmeleri
+     * @param key Mesaj keyi
+     * @param placeholders Yer tutucular ve değerleri
      * @return Formatlanmış mesaj
      */
-    public Component getMessage(String path, Map<String, String> placeholders) {
-        String message = config.getString("messages." + path, "Mesaj bulunamadı: " + path);
+    public Component getMessage(String key, Map<String, String> placeholders) {
+        // Mesaj yoksa boş dön
+        String rawMessage = config.getString("messages." + key);
         
-        // Yer tutucuları değiştir
-        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-            message = message.replace("%" + entry.getKey() + "%", entry.getValue());
+        if (rawMessage == null || rawMessage.isEmpty()) {
+            return Component.empty();
         }
         
-        return miniMessage.deserialize(convertLegacyToMiniMessage(message));
+        // Mesaj anahtarı ve placeholder'lar için özel cache anahtarı oluştur
+        StringBuilder cacheKeyBuilder = new StringBuilder("msg:" + key);
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            cacheKeyBuilder.append(":").append(entry.getKey()).append("=").append(entry.getValue());
+        }
+        String cacheKey = cacheKeyBuilder.toString();
+        
+        // Cache'ten kontrol et
+        Component cachedMessage = messageCache.get(cacheKey);
+        if (cachedMessage != null) {
+            return cachedMessage;
+        }
+        
+        // Yer tutucuları değiştir
+        String processedMessage = rawMessage;
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            processedMessage = processedMessage.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        
+        // MiniMessage ile formatla
+        Component formattedMessage = miniMessage.deserialize(processedMessage);
+        
+        // Cache'e kaydet
+        messageCache.put(cacheKey, formattedMessage);
+        checkCacheExpiry();
+        
+        return formattedMessage;
+    }
+
+    /**
+     * Önbelleği temizleme kontrolü 
+     */
+    private void checkCacheExpiry() {
+        long currentTime = System.currentTimeMillis();
+        
+        // Önbellek temizleme zamanı gelmiş mi kontrol et
+        if (currentTime - lastCacheClear > CACHE_EXPIRY_MS) {
+            // Asenkron olarak önbelleği temizle
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    messageCache.clear();
+                    cachedPrefix = null;
+                    lastCacheClear = currentTime;
+                }
+            }.runTaskAsynchronously(plugin);
+        }
+    }
+
+    /**
+     * Ön eki getirir (önbellekli)
+     * 
+     * @return Ön ek bileşeni
+     */
+    public Component getPrefix() {
+        if (cachedPrefix != null) {
+            return cachedPrefix;
+        }
+        
+        String prefix = config.getString("messages.prefix", "<dark_gray>[<aqua>cDuello<dark_gray>]</dark_gray> ");
+        cachedPrefix = miniMessage.deserialize(prefix);
+        return cachedPrefix;
     }
 
     /**
@@ -149,22 +246,35 @@ public class MessageManager {
     }
 
     /**
-     * MiniMessage'ı doğrudan dizelere uygular
+     * String'i MiniMessage formatında formatlar.
+     * Performans için önbellek kullanır.
      * 
-     * @param input Formatlanacak metin
-     * @return Formatlanmış Component
+     * @param input Formatlanacak string
+     * @return Formatlanmış component
      */
     public Component format(String input) {
-        return miniMessage.deserialize(convertLegacyToMiniMessage(input));
-    }
-
-    /**
-     * Ön eki getirir
-     * 
-     * @return Formatlı öneki
-     */
-    public Component getPrefix() {
-        return getMessage("prefix");
+        if (input == null || input.isEmpty()) {
+            return Component.empty();
+        }
+        
+        // Cache'ten kontrol et
+        String cacheKey = "fmt:" + input.hashCode();
+        Component cachedFormat = messageCache.get(cacheKey);
+        
+        if (cachedFormat != null) {
+            return cachedFormat;
+        }
+        
+        // Cache'te yoksa, yeni formatı oluştur
+        Component formatted = miniMessage.deserialize(input);
+        
+        // Cache'e kaydet (eğer çok uzun değilse - uzun stringler için önbellek kullanımı bellek sorunlarına yol açabilir)
+        if (input.length() < 100) {
+            messageCache.put(cacheKey, formatted);
+            checkCacheExpiry();
+        }
+        
+        return formatted;
     }
 
     /**

@@ -39,6 +39,27 @@ public class Duel {
     }
 
     /**
+     * Create a new duel with specified locations and bet amount
+     *
+     * @param challenger The challenger player
+     * @param challenged The challenged player
+     * @param challengerLocation The location of the challenger
+     * @param challengedLocation The location of the challenged
+     * @param betAmount The amount of money bet on the duel
+     */
+    public Duel(Player challenger, Player challenged, Location challengerLocation, Location challengedLocation, double betAmount) {
+        this.id = UUID.randomUUID();
+        this.challenger = challenger.getUniqueId();
+        this.challenged = challenged.getUniqueId();
+        this.challengerLocation = challengerLocation;
+        this.challengedLocation = challengedLocation;
+        this.state = DuelState.PENDING;
+        this.winner = null;
+        this.betAmount = betAmount;
+        this.moneyDuel = betAmount > 0;
+    }
+
+    /**
      * Get the UUID of the duel
      *
      * @return The UUID of the duel
